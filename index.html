@@ -27,10 +27,12 @@ class="bg-red-600 px-4 py-2 rounded hidden">Logout</button>
 </div>
 </div>
 
-<!-- LIGA SWITCH -->
-<div class="flex justify-center gap-4 mb-6">
+<!-- LIGA BUTTONS -->
+<div class="flex flex-wrap justify-center gap-4 mb-6">
 <button onclick="switchLiga('liga1')" class="bg-blue-600 px-4 py-2 rounded">Liga 1</button>
 <button onclick="switchLiga('liga2')" class="bg-purple-600 px-4 py-2 rounded">Liga 2</button>
+<button onclick="switchLiga('liga3')" class="bg-green-600 px-4 py-2 rounded">Liga 3</button>
+<button onclick="switchLiga('liga4')" class="bg-red-600 px-4 py-2 rounded">Liga 4</button>
 </div>
 
 <h2 id="ligaTitle" class="text-2xl font-bold text-center mb-4"></h2>
@@ -106,7 +108,6 @@ Spiel speichern
 <span class="bg-yellow-600 px-2 py-1 rounded ml-2">Relegation</span>
 <span class="bg-red-700 px-2 py-1 rounded ml-2">Abstieg</span>
 </div>
-
 </div>
 </div>
 
@@ -114,7 +115,7 @@ Spiel speichern
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged }
 from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot, getDocs }
+import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot }
 from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -126,11 +127,11 @@ messagingSenderId: "661130390257",
 appId: "1:661130390257:web:469047a1dec589eb321750"
 };
 
-const ADMIN_EMAILS = ["janblut18@gmail.com"];
+const ADMIN_EMAILS=["janblut18@gmail.com"];
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
+const app=initializeApp(firebaseConfig);
+const auth=getAuth(app);
+const db=getFirestore(app);
 
 let currentLiga="liga1";
 let isAdmin=false;
@@ -159,7 +160,7 @@ logoutBtn.classList.add("hidden");
 
 window.switchLiga=liga=>{
 currentLiga=liga;
-ligaTitle.innerText=liga==="liga1"?"Liga 1":"Liga 2";
+ligaTitle.innerText="Liga "+liga.replace("liga","");
 loadPlayers();
 loadMatches();
 };
@@ -207,6 +208,7 @@ function loadMatches(){
 onSnapshot(matchesRef,snap=>{
 matchTable.querySelector("tbody").innerHTML="";
 let tableData={};
+
 snap.forEach(docSnap=>{
 const m=docSnap.data();
 if(m.liga!==currentLiga)return;
@@ -238,8 +240,7 @@ else if(h<a){tableData[m.gast].siege++;tableData[m.gast].punkte+=3;}
 else{tableData[m.heim].unentschieden++;tableData[m.gast].unentschieden++;tableData[m.heim].punkte+=1;tableData[m.gast].punkte+=1;}
 });
 
-const teams=Object.keys(tableData)
-.sort((a,b)=>{
+const teams=Object.keys(tableData).sort((a,b)=>{
 if(tableData[b].punkte!==tableData[a].punkte)
 return tableData[b].punkte-tableData[a].punkte;
 return (tableData[b].legsPlus-tableData[b].legsMinus)-(tableData[a].legsPlus-tableData[a].legsMinus);
@@ -255,7 +256,12 @@ if(currentLiga==="liga1"){
 if(index===teams.length-1)rowClass="bg-red-700";
 else if(index===teams.length-2)rowClass="bg-yellow-600";
 }
-if(currentLiga==="liga2"){
+if(currentLiga==="liga2"||currentLiga==="liga3"){
+if(index===0)rowClass="bg-green-600";
+else if(index===1)rowClass="bg-yellow-600";
+else if(index===teams.length-1)rowClass="bg-red-700";
+}
+if(currentLiga==="liga4"){
 if(index===0)rowClass="bg-green-600";
 else if(index===1)rowClass="bg-yellow-600";
 }
