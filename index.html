@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Kirschtarmyliga 1.2</title>
+<title>Kirschtarmyliga 1.3</title>
 <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
@@ -12,7 +12,7 @@
 <div class="max-w-6xl mx-auto p-6">
 
 <h1 class="text-4xl font-bold text-center mb-8">
-🎯 Kirschtarmyliga 1.2
+🎯 Kirschtarmyliga 1.3
 </h1>
 
 <!-- LOGIN -->
@@ -80,6 +80,7 @@ class="mt-4 bg-blue-600 px-4 py-2 rounded hidden">
 <th>Team</th>
 <th>Sp</th>
 <th>S</th>
+<th>U</th>
 <th>Leg+</th>
 <th>Leg-</th>
 <th>Diff</th>
@@ -100,6 +101,7 @@ class="mt-4 bg-blue-600 px-4 py-2 rounded hidden">
 <th>Spieler</th>
 <th>Spiele</th>
 <th>Siege</th>
+<th>Unentschieden</th>
 <th>Leg+</th>
 <th>Leg-</th>
 <th>Diff</th>
@@ -175,7 +177,7 @@ if(!isAdmin) return;
 const spieltag = prompt("Spieltag:");
 const home = prompt("Heimteam:");
 const away = prompt("Gastteam:");
-const result = prompt("Ergebnis (z.B 6:4):");
+const result = prompt("Ergebnis (z.B 6:4 oder 5:5):");
 const date = new Date().toISOString().split("T")[0];
 
 await addDoc(collection(db,"matches"),
@@ -217,10 +219,10 @@ if(!m.result.includes(":")) return;
 let [h,a]=m.result.split(":").map(Number);
 
 if(!tableData[m.home])
-tableData[m.home]={spiele:0,siege:0,legsPlus:0,legsMinus:0,punkte:0};
+tableData[m.home]={spiele:0,siege:0,unentschieden:0,legsPlus:0,legsMinus:0,punkte:0};
 
 if(!tableData[m.away])
-tableData[m.away]={spiele:0,siege:0,legsPlus:0,legsMinus:0,punkte:0};
+tableData[m.away]={spiele:0,siege:0,unentschieden:0,legsPlus:0,legsMinus:0,punkte:0};
 
 tableData[m.home].spiele++;
 tableData[m.away].spiele++;
@@ -229,12 +231,19 @@ tableData[m.home].legsMinus+=a;
 tableData[m.away].legsPlus+=a;
 tableData[m.away].legsMinus+=h;
 
-if(h>a){
+if(h > a){
 tableData[m.home].siege++;
 tableData[m.home].punkte+=3;
-}else{
+}
+else if(h < a){
 tableData[m.away].siege++;
 tableData[m.away].punkte+=3;
+}
+else{
+tableData[m.home].unentschieden++;
+tableData[m.away].unentschieden++;
+tableData[m.home].punkte+=1;
+tableData[m.away].punkte+=1;
 }
 });
 
@@ -254,6 +263,7 @@ let row=`
 <td>${team}</td>
 <td>${d.spiele}</td>
 <td>${d.siege}</td>
+<td>${d.unentschieden}</td>
 <td>${d.legsPlus}</td>
 <td>${d.legsMinus}</td>
 <td>${d.legsPlus-d.legsMinus}</td>
