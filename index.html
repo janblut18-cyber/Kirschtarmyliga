@@ -28,7 +28,7 @@ class="p-2 text-black rounded mb-2 w-64">
 </div>
 
 <!-- LIGA BUTTONS -->
-<div class="flex flex-wrap justify-center gap-4 mb-6">
+<div class="flex justify-center gap-4 mb-6">
 <button onclick="switchLiga('liga1')" class="bg-blue-600 px-4 py-2 rounded">Liga 1</button>
 <button onclick="switchLiga('liga2')" class="bg-purple-600 px-4 py-2 rounded">Liga 2</button>
 <button onclick="switchLiga('liga3')" class="bg-green-600 px-4 py-2 rounded">Liga 3</button>
@@ -108,14 +108,13 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-/* 🔥 HIER DEINE FIREBASE CONFIG EINSETZEN */
 const firebaseConfig = {
-  apiKey: "DEIN_API_KEY",
-  authDomain: "DEIN_AUTH_DOMAIN",
-  projectId: "DEIN_PROJECT_ID",
-  storageBucket: "DEIN_BUCKET",
-  messagingSenderId: "DEIN_SENDER_ID",
-  appId: "DEIN_APP_ID"
+  apiKey: "AIzaSyDb87wTtntcY4VQ9WjekaA3CLYwW2bNrmQ",
+  authDomain: "kirschtarmyliga.firebaseapp.com",
+  projectId: "kirschtarmyliga",
+  storageBucket: "kirschtarmyliga.firebasestorage.app",
+  messagingSenderId: "661130390257",
+  appId: "1:661130390257:web:469047a1dec589eb321750"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -130,7 +129,7 @@ try{
 await signInWithEmailAndPassword(auth,email.value,password.value);
 loginStatus.innerText="Erfolgreich eingeloggt";
 }catch(e){
-loginStatus.innerText="Login fehlgeschlagen";
+loginStatus.innerText=e.message;
 }
 }
 
@@ -236,7 +235,6 @@ return (tableData[b].legsPlus-tableData[b].legsMinus)-
 teams.forEach((team,index)=>{
 let d = tableData[team];
 let rowClass="";
-
 if(index===0) rowClass="bg-green-600";
 if(index===teams.length-2 && teams.length>2) rowClass="bg-yellow-500 text-black";
 if(index===teams.length-1) rowClass="bg-red-600";
@@ -258,6 +256,5 @@ leagueTable.innerHTML+=`
 switchLiga("liga1");
 
 </script>
-
 </body>
 </html>
