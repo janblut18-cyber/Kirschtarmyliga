@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Kirschtarmyliga 1.1</title>
+<title>Kirschtarmyliga 1.2</title>
 <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
@@ -12,7 +12,7 @@
 <div class="max-w-6xl mx-auto p-6">
 
 <h1 class="text-4xl font-bold text-center mb-8">
-🎯 Kirschtarmyliga 1.1
+🎯 Kirschtarmyliga 1.2
 </h1>
 
 <!-- LOGIN -->
@@ -90,6 +90,26 @@ class="mt-4 bg-blue-600 px-4 py-2 rounded hidden">
 </table>
 </div>
 
+<!-- SPIELERÜBERSICHT -->
+<div class="bg-gray-800 p-6 rounded-xl">
+<h3 class="text-xl font-bold mb-4">👤 Spielerübersicht</h3>
+
+<table class="w-full text-center" id="playerTable">
+<thead class="bg-gray-700">
+<tr>
+<th>Spieler</th>
+<th>Spiele</th>
+<th>Siege</th>
+<th>Leg+</th>
+<th>Leg-</th>
+<th>Diff</th>
+<th>Punkte</th>
+</tr>
+</thead>
+<tbody></tbody>
+</table>
+</div>
+
 </div>
 
 <script type="module">
@@ -152,14 +172,14 @@ loadMatches();
 window.addMatch = async function(){
 if(!isAdmin) return;
 
-const spieltag = prompt("Spieltag (z.B 1):");
+const spieltag = prompt("Spieltag:");
 const home = prompt("Heimteam:");
 const away = prompt("Gastteam:");
 const result = prompt("Ergebnis (z.B 6:4):");
 const date = new Date().toISOString().split("T")[0];
 
 await addDoc(collection(db,"matches"),
-{liga:currentLiga,spieltag:Number(spieltag),home,away,result,date});
+{liga:currentLiga,spieltag:Number(spieltag)||1,home,away,result,date});
 }
 
 window.deleteMatch = async function(id){
@@ -171,7 +191,6 @@ onSnapshot(collection(db,"matches"), snapshot=>{
 let tbody = document.querySelector("#matchTable tbody");
 tbody.innerHTML="";
 let tableData={};
-
 let matches=[];
 
 snapshot.forEach(docSnap=>{
@@ -180,12 +199,12 @@ if(m.liga!==currentLiga) return;
 matches.push({id:docSnap.id,...m});
 });
 
-matches.sort((a,b)=>a.spieltag-b.spieltag);
+matches.sort((a,b)=>(a.spieltag||1)-(b.spieltag||1));
 
 matches.forEach(m=>{
 tbody.innerHTML+=`
 <tr>
-<td>${m.spieltag}</td>
+<td>${m.spieltag || 1}</td>
 <td>${m.date}</td>
 <td>${m.home}</td>
 <td>${m.away}</td>
@@ -220,13 +239,17 @@ tableData[m.away].punkte+=3;
 });
 
 let leagueBody=document.querySelector("#leagueTable tbody");
+let playerBody=document.querySelector("#playerTable tbody");
+
 leagueBody.innerHTML="";
+playerBody.innerHTML="";
 
 Object.keys(tableData)
 .sort((a,b)=>tableData[b].punkte-tableData[a].punkte)
 .forEach(team=>{
 let d=tableData[team];
-leagueBody.innerHTML+=`
+
+let row=`
 <tr>
 <td>${team}</td>
 <td>${d.spiele}</td>
@@ -236,6 +259,9 @@ leagueBody.innerHTML+=`
 <td>${d.legsPlus-d.legsMinus}</td>
 <td>${d.punkte}</td>
 </tr>`;
+
+leagueBody.innerHTML+=row;
+playerBody.innerHTML+=row;
 });
 });
 }
