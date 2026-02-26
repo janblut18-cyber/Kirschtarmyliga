@@ -41,7 +41,8 @@ class="p-2 text-black rounded mb-2 w-64">
 <div class="bg-gray-800 p-6 rounded-xl mb-8">
 <h3 class="text-xl font-bold mb-4">👥 Spieler</h3>
 <ul id="playerList" class="mb-4 space-y-1"></ul>
-<button onclick="addPlayer()" class="bg-green-600 px-4 py-2 rounded">
+<button id="addPlayerBtn" onclick="addPlayer()"
+class="bg-green-600 px-4 py-2 rounded hidden">
 ➕ Spieler hinzufügen
 </button>
 </div>
@@ -59,7 +60,8 @@ class="text-black p-2 rounded">
 class="text-black p-2 rounded">
 </div>
 
-<button onclick="addMatch()" class="bg-blue-600 px-4 py-2 rounded">
+<button id="addMatchBtn" onclick="addMatch()"
+class="bg-blue-600 px-4 py-2 rounded hidden">
 Spiel speichern
 </button>
 
@@ -100,12 +102,13 @@ Spiel speichern
 
 </div>
 
-<!-- FIREBASE -->
 <script type="module">
+
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
+/* 🔥 HIER DEINE FIREBASE CONFIG EINSETZEN */
 const firebaseConfig = {
   apiKey: "DEIN_API_KEY",
   authDomain: "DEIN_AUTH_DOMAIN",
@@ -118,6 +121,9 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+
+let currentLiga="liga1";
+let isAdmin=false;
 
 window.login = async function(){
 try{
@@ -133,7 +139,17 @@ signOut(auth);
 loginStatus.innerText="Ausgeloggt";
 }
 
-let currentLiga="liga1";
+onAuthStateChanged(auth,(user)=>{
+if(user && user.email==="janblut18@gmail.com"){
+isAdmin=true;
+addPlayerBtn.classList.remove("hidden");
+addMatchBtn.classList.remove("hidden");
+}else{
+isAdmin=false;
+addPlayerBtn.classList.add("hidden");
+addMatchBtn.classList.add("hidden");
+}
+});
 
 window.switchLiga = function(liga){
 currentLiga=liga;
@@ -142,6 +158,7 @@ loadData();
 }
 
 window.addPlayer = async function(){
+if(!isAdmin) return;
 const name=prompt("Spielername:");
 if(!name) return;
 await addDoc(collection(db,currentLiga+"_players"),{name});
@@ -149,6 +166,7 @@ loadData();
 }
 
 window.addMatch = async function(){
+if(!isAdmin) return;
 await addDoc(collection(db,currentLiga+"_matches"),{
 spieltag:spieltagInput.value,
 heim:heimSelect.value,
@@ -159,10 +177,14 @@ loadData();
 }
 
 async function loadData(){
+
 playerList.innerHTML="";
 heimSelect.innerHTML="";
 gastSelect.innerHTML="";
 matchTable.innerHTML="";
+leagueTable.innerHTML="";
+
+let tableData={};
 
 const playersSnap=await getDocs(collection(db,currentLiga+"_players"));
 playersSnap.forEach(doc=>{
@@ -170,6 +192,7 @@ const p=doc.data().name;
 playerList.innerHTML+=`<li class="bg-gray-700 p-2 rounded">${p}</li>`;
 heimSelect.innerHTML+=`<option>${p}</option>`;
 gastSelect.innerHTML+=`<option>${p}</option>`;
+tableData[p]={spiele:0,siege:0,unentschieden:0,legsPlus:0,legsMinus:0,punkte:0};
 });
 
 const matchSnap=await getDocs(collection(db,currentLiga+"_matches"));
@@ -182,10 +205,58 @@ matchTable.innerHTML+=`
 <td>${m.gast}</td>
 <td>${m.result}</td>
 </tr>`;
+
+if(!m.result.includes(":")) return;
+let [h,a]=m.result.split(":").map(Number);
+
+tableData[m.heim].spiele++;
+tableData[m.gast].spiele++;
+tableData[m.heim].legsPlus+=h;
+tableData[m.heim].legsMinus+=a;
+tableData[m.gast].legsPlus+=a;
+tableData[m.gast].legsMinus+=h;
+
+if(h>a){tableData[m.heim].siege++;tableData[m.heim].punkte+=3;}
+else if(h<a){tableData[m.gast].siege++;tableData[m.gast].punkte+=3;}
+else{
+tableData[m.heim].unentschieden++;
+tableData[m.gast].unentschieden++;
+tableData[m.heim].punkte+=1;
+tableData[m.gast].punkte+=1;
+}
+});
+
+let teams = Object.keys(tableData).sort((a,b)=>{
+if(tableData[b].punkte !== tableData[a].punkte)
+return tableData[b].punkte-tableData[a].punkte;
+return (tableData[b].legsPlus-tableData[b].legsMinus)-
+(tableData[a].legsPlus-tableData[a].legsMinus);
+});
+
+teams.forEach((team,index)=>{
+let d = tableData[team];
+let rowClass="";
+
+if(index===0) rowClass="bg-green-600";
+if(index===teams.length-2 && teams.length>2) rowClass="bg-yellow-500 text-black";
+if(index===teams.length-1) rowClass="bg-red-600";
+
+leagueTable.innerHTML+=`
+<tr class="${rowClass}">
+<td>${team}</td>
+<td>${d.spiele}</td>
+<td>${d.siege}</td>
+<td>${d.unentschieden}</td>
+<td>${d.legsPlus}</td>
+<td>${d.legsMinus}</td>
+<td>${d.legsPlus-d.legsMinus}</td>
+<td>${d.punkte}</td>
+</tr>`;
 });
 }
 
 switchLiga("liga1");
+
 </script>
 
 </body>
