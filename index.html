@@ -14,13 +14,11 @@
 🎯 Kirschtarmyliga 1.0
 </h1>
 
-<!-- LOGIN -->
+<!-- ADMIN LOGIN -->
 <div class="bg-gray-800 p-4 rounded-xl mb-6 text-center">
-<input id="email" type="email" placeholder="E-Mail"
+<input id="adminPass" type="password" placeholder="Admin Passwort"
 class="p-2 text-black rounded mb-2 w-64">
-<input id="password" type="password" placeholder="Passwort"
-class="p-2 text-black rounded mb-2 w-64">
-<div class="mt-2">
+<div>
 <button onclick="login()" class="bg-green-600 px-4 py-2 rounded">Login</button>
 <button onclick="logout()" id="logoutBtn"
 class="bg-red-600 px-4 py-2 rounded hidden">Logout</button>
@@ -59,7 +57,6 @@ class="bg-green-600 px-4 py-2 rounded hidden">
 class="text-black p-2 rounded">
 <input id="resultInput" placeholder="Ergebnis z.B 6:4"
 class="text-black p-2 rounded">
-<input type="file" id="fileInput" class="text-white col-span-2 hidden">
 </div>
 
 <button id="addMatchBtn"
@@ -77,7 +74,6 @@ Spiel speichern
 <th>Heim</th>
 <th>Gast</th>
 <th>Ergebnis</th>
-<th>Datei</th>
 <th id="deleteHeader" class="hidden">❌</th>
 </tr>
 </thead>
@@ -107,134 +103,104 @@ Spiel speichern
 
 </div>
 
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged }
-from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot }
-from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { getStorage, ref, uploadBytes, getDownloadURL }
-from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
+<script>
+const ADMIN_PASSWORD = "dart2026"; 
+let currentLiga = "liga1";
+let isAdmin = false;
 
-const firebaseConfig = {
-apiKey: "AIzaSyDb87wTtntcY4VQ9WjekaA3CLYwW2bNrmQ",
-authDomain: "kirschtarmyliga.firebaseapp.com",
-projectId: "kirschtarmyliga",
-storageBucket: "kirschtarmyliga.appspot.com",
-messagingSenderId: "661130390257",
-appId: "1:661130390257:web:469047a1dec589eb321750"
-};
-
-const ADMIN_EMAILS=["janblut18@gmail.com"];
-
-const app=initializeApp(firebaseConfig);
-const auth=getAuth(app);
-const db=getFirestore(app);
-const storage=getStorage(app);
-
-let currentLiga="liga1";
-let isAdmin=false;
-
-const playersRef=collection(db,"players");
-const matchesRef=collection(db,"matches");
-
-window.login=async()=>await signInWithEmailAndPassword(auth,email.value,password.value);
-window.logout=async()=>await signOut(auth);
-
-onAuthStateChanged(auth,user=>{
-if(user && ADMIN_EMAILS.includes(user.email)){
-isAdmin=true;
+function login(){
+if(adminPass.value === ADMIN_PASSWORD){
+isAdmin = true;
 addMatchBtn.classList.remove("hidden");
 addPlayerBtn.classList.remove("hidden");
 deleteHeader.classList.remove("hidden");
-fileInput.classList.remove("hidden");
 logoutBtn.classList.remove("hidden");
-}else{
-isAdmin=false;
+}
+}
+
+function logout(){
+isAdmin = false;
 addMatchBtn.classList.add("hidden");
 addPlayerBtn.classList.add("hidden");
 deleteHeader.classList.add("hidden");
-fileInput.classList.add("hidden");
 logoutBtn.classList.add("hidden");
 }
-});
 
-window.switchLiga=liga=>{
-currentLiga=liga;
-ligaTitle.innerText="Liga "+liga.replace("liga","");
+function switchLiga(liga){
+currentLiga = liga;
+ligaTitle.innerText = "Liga " + liga.replace("liga","");
 loadPlayers();
 loadMatches();
-};
+}
 
-window.addPlayer=async()=>{
-if(!isAdmin)return;
-const name=prompt("Spielername:");
-if(!name)return;
-await addDoc(playersRef,{liga:currentLiga,name});
-};
+function getData(key){
+return JSON.parse(localStorage.getItem(key)) || [];
+}
+
+function setData(key,data){
+localStorage.setItem(key,JSON.stringify(data));
+}
+
+function addPlayer(){
+const name = prompt("Spielername:");
+if(!name) return;
+let players = getData("players_"+currentLiga);
+players.push(name);
+setData("players_"+currentLiga,players);
+loadPlayers();
+}
 
 function loadPlayers(){
-onSnapshot(playersRef,snap=>{
+let players = getData("players_"+currentLiga);
 playerList.innerHTML="";
 heimSelect.innerHTML="";
 gastSelect.innerHTML="";
-snap.forEach(docSnap=>{
-const p=docSnap.data();
-if(p.liga!==currentLiga)return;
-playerList.innerHTML+=`<li class="flex justify-between bg-gray-700 p-2 rounded">
-${p.name}
-${isAdmin?`<button onclick="deletePlayer('${docSnap.id}')" class="text-red-400">X</button>`:""}
+players.forEach((p,i)=>{
+playerList.innerHTML += `
+<li class="flex justify-between bg-gray-700 p-2 rounded">
+${p}
+${isAdmin?`<button onclick="deletePlayer(${i})" class="text-red-400">X</button>`:""}
 </li>`;
-heimSelect.innerHTML+=`<option>${p.name}</option>`;
-gastSelect.innerHTML+=`<option>${p.name}</option>`;
-});
+heimSelect.innerHTML += `<option>${p}</option>`;
+gastSelect.innerHTML += `<option>${p}</option>`;
 });
 }
 
-window.deletePlayer=async id=>await deleteDoc(doc(db,"players",id));
-
-window.addMatch=async()=>{
-if(!isAdmin)return;
-
-let fileURL="";
-if(fileInput.files.length>0){
-const file=fileInput.files[0];
-const storageRef=ref(storage,"spiele/"+Date.now()+"_"+file.name);
-await uploadBytes(storageRef,file);
-fileURL=await getDownloadURL(storageRef);
+function deletePlayer(i){
+let players = getData("players_"+currentLiga);
+players.splice(i,1);
+setData("players_"+currentLiga,players);
+loadPlayers();
 }
 
-await addDoc(matchesRef,{
-liga:currentLiga,
-spieltag:Number(spieltagInput.value)||1,
-heim:heimSelect.value,
-gast:gastSelect.value,
-result:resultInput.value,
-file:fileURL
+function addMatch(){
+let matches = getData("matches_"+currentLiga);
+matches.push({
+spieltag: spieltagInput.value,
+heim: heimSelect.value,
+gast: gastSelect.value,
+result: resultInput.value
 });
-};
+setData("matches_"+currentLiga,matches);
+loadMatches();
+}
 
 function loadMatches(){
-onSnapshot(matchesRef,snap=>{
+let matches = getData("matches_"+currentLiga);
 matchTable.querySelector("tbody").innerHTML="";
 let tableData={};
 
-snap.forEach(docSnap=>{
-const m=docSnap.data();
-if(m.liga!==currentLiga)return;
-
+matches.forEach((m,i)=>{
 matchTable.querySelector("tbody").innerHTML+=`
 <tr>
 <td>${m.spieltag}</td>
 <td>${m.heim}</td>
 <td>${m.gast}</td>
 <td>${m.result}</td>
-<td>${m.file?`<a href="${m.file}" target="_blank" class="text-blue-400 underline">Öffnen</a>`:"-"}</td>
-${isAdmin?`<td><button onclick="deleteMatch('${docSnap.id}')" class="text-red-400">X</button></td>`:""}
+${isAdmin?`<td><button onclick="deleteMatch(${i})" class="text-red-400">X</button></td>`:""}
 </tr>`;
 
-if(!m.result.includes(":"))return;
-
+if(!m.result.includes(":")) return;
 let [h,a]=m.result.split(":").map(Number);
 
 if(!tableData[m.heim])
@@ -259,9 +225,8 @@ tableData[m.gast].punkte+=1;
 }
 });
 
-const teams=Object.keys(tableData)
-.sort((a,b)=>{
-if(tableData[b].punkte!==tableData[a].punkte)
+let teams = Object.keys(tableData).sort((a,b)=>{
+if(tableData[b].punkte !== tableData[a].punkte)
 return tableData[b].punkte-tableData[a].punkte;
 return (tableData[b].legsPlus-tableData[b].legsMinus)-
 (tableData[a].legsPlus-tableData[a].legsMinus);
@@ -269,10 +234,13 @@ return (tableData[b].legsPlus-tableData[b].legsMinus)-
 
 leagueTable.querySelector("tbody").innerHTML="";
 
-teams.forEach(team=>{
+teams.forEach((team,index)=>{
 let d=tableData[team];
+let rowClass="";
+if(index===0) rowClass="bg-green-600";
+if(index===teams.length-1) rowClass="bg-red-600";
 leagueTable.querySelector("tbody").innerHTML+=`
-<tr>
+<tr class="${rowClass}">
 <td>${team}</td>
 <td>${d.spiele}</td>
 <td>${d.siege}</td>
@@ -283,10 +251,14 @@ leagueTable.querySelector("tbody").innerHTML+=`
 <td>${d.punkte}</td>
 </tr>`;
 });
-});
 }
 
-window.deleteMatch=async id=>await deleteDoc(doc(db,"matches",id));
+function deleteMatch(i){
+let matches=getData("matches_"+currentLiga);
+matches.splice(i,1);
+setData("matches_"+currentLiga,matches);
+loadMatches();
+}
 
 switchLiga("liga1");
 </script>
