@@ -108,7 +108,7 @@ Spiel speichern
 
 <script>
 const ADMIN_EMAIL = "janblut18@gmail.com";
-const ADMIN_PASSWORD = "dart2026";
+const ADMIN_PASSWORD = "Janjaq2308!!";
 
 let currentLiga = "liga1";
 let isAdmin = false;
@@ -219,6 +219,7 @@ ${isAdmin?`<td><button onclick="deleteMatch(${i})" class="text-red-400">X</butto
 </tr>`;
 
 if(!m.result.includes(":")) return;
+
 let [h,a]=m.result.split(":").map(Number);
 
 if(!tableData[m.heim])
@@ -257,6 +258,7 @@ let d=tableData[team];
 let rowClass="";
 if(index===0) rowClass="bg-green-600";
 if(index===teams.length-1) rowClass="bg-red-600";
+
 leagueTable.querySelector("tbody").innerHTML+=`
 <tr class="${rowClass}">
 <td>${team}</td>
