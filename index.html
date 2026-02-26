@@ -37,6 +37,50 @@ class="p-2 text-black rounded mb-2 w-64">
 
 <h2 id="ligaTitle" class="text-2xl font-bold text-center mb-4"></h2>
 
+<!-- SPIELER -->
+<div class="bg-gray-800 p-6 rounded-xl mb-8">
+<h3 class="text-xl font-bold mb-4">👥 Spieler</h3>
+<ul id="playerList" class="mb-4 space-y-1"></ul>
+<button id="addPlayerBtn" onclick="addPlayer()"
+class="bg-green-600 px-4 py-2 rounded hidden">
+➕ Spieler hinzufügen
+</button>
+</div>
+
+<!-- SPIEL -->
+<div class="bg-gray-800 p-6 rounded-xl mb-8">
+<h3 class="text-xl font-bold mb-4">🗓 Spiel hinzufügen</h3>
+
+<div class="grid grid-cols-2 gap-4 mb-4">
+<select id="heimSelect" class="text-black p-2 rounded"></select>
+<select id="gastSelect" class="text-black p-2 rounded"></select>
+<input id="spieltagInput" type="number" placeholder="Spieltag"
+class="text-black p-2 rounded">
+<input id="resultInput" placeholder="Ergebnis 6:4"
+class="text-black p-2 rounded">
+</div>
+
+<button id="addMatchBtn" onclick="addMatch()"
+class="bg-blue-600 px-4 py-2 rounded hidden">
+Spiel speichern
+</button>
+
+<hr class="my-6 border-gray-600">
+
+<table class="w-full text-center">
+<thead class="bg-gray-700">
+<tr>
+<th>Spieltag</th>
+<th>Heim</th>
+<th>Gast</th>
+<th>Ergebnis</th>
+</tr>
+</thead>
+<tbody id="matchTable"></tbody>
+</table>
+</div>
+
+<!-- TABELLE -->
 <div class="bg-gray-800 p-6 rounded-xl">
 <h3 class="text-xl font-bold mb-4">📊 Tabelle</h3>
 <table class="w-full text-center">
@@ -62,7 +106,7 @@ class="p-2 text-black rounded mb-2 w-64">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDb87wTtntcY4VQ9WjekaA3CLYwW2bNrmQ",
@@ -78,6 +122,19 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 
 let currentLiga="liga1";
+let isAdmin=false;
+
+onAuthStateChanged(auth,(user)=>{
+if(user && user.email==="janblut18@gmail.com"){
+isAdmin=true;
+addPlayerBtn.classList.remove("hidden");
+addMatchBtn.classList.remove("hidden");
+}else{
+isAdmin=false;
+addPlayerBtn.classList.add("hidden");
+addMatchBtn.classList.add("hidden");
+}
+});
 
 window.login = async function(){
 try{
@@ -96,23 +153,57 @@ loginStatus.innerText="Ausgeloggt";
 window.switchLiga = function(liga){
 currentLiga=liga;
 ligaTitle.innerText="Liga "+liga.replace("liga","");
-loadTable();
+loadData();
 }
 
-async function loadTable(){
+window.addPlayer = async function(){
+if(!isAdmin) return;
+const name=prompt("Spielername:");
+if(!name) return;
+await addDoc(collection(db,currentLiga+"_players"),{name});
+loadData();
+}
 
+window.addMatch = async function(){
+if(!isAdmin) return;
+await addDoc(collection(db,currentLiga+"_matches"),{
+spieltag:spieltagInput.value,
+heim:heimSelect.value,
+gast:gastSelect.value,
+result:resultInput.value
+});
+loadData();
+}
+
+async function loadData(){
+
+playerList.innerHTML="";
+heimSelect.innerHTML="";
+gastSelect.innerHTML="";
+matchTable.innerHTML="";
 leagueTable.innerHTML="";
 let tableData={};
 
 const playersSnap=await getDocs(collection(db,currentLiga+"_players"));
 playersSnap.forEach(doc=>{
 const p=doc.data().name;
+playerList.innerHTML+=`<li class="bg-gray-700 p-2 rounded">${p}</li>`;
+heimSelect.innerHTML+=`<option>${p}</option>`;
+gastSelect.innerHTML+=`<option>${p}</option>`;
 tableData[p]={spiele:0,siege:0,unentschieden:0,legsPlus:0,legsMinus:0,punkte:0};
 });
 
 const matchSnap=await getDocs(collection(db,currentLiga+"_matches"));
 matchSnap.forEach(doc=>{
 const m=doc.data();
+matchTable.innerHTML+=`
+<tr>
+<td>${m.spieltag}</td>
+<td>${m.heim}</td>
+<td>${m.gast}</td>
+<td>${m.result}</td>
+</tr>`;
+
 if(!m.result.includes(":")) return;
 let [h,a]=m.result.split(":").map(Number);
 
@@ -140,7 +231,7 @@ return (tableData[b].legsPlus-tableData[b].legsMinus)-
 (tableData[a].legsPlus-tableData[a].legsMinus);
 });
 
-let ligaNum=parseInt(currentLiga.replace("liga",""));
+let liga=parseInt(currentLiga.replace("liga",""));
 let last=teams.length-1;
 let secondLast=teams.length-2;
 
@@ -148,24 +239,24 @@ teams.forEach((team,index)=>{
 let d=tableData[team];
 let rowClass="";
 
-if(ligaNum===1){
+if(liga===1){
 if(index===secondLast) rowClass="bg-yellow-500 text-black";
 if(index===last) rowClass="bg-red-600";
 }
 
-if(ligaNum===2){
+if(liga===2){
 if(index===0) rowClass="bg-green-600";
 if(index===secondLast) rowClass="bg-yellow-500 text-black";
 if(index===last) rowClass="bg-red-600";
 }
 
-if(ligaNum===3){
+if(liga===3){
 if(index===0) rowClass="bg-green-600";
 if(index===secondLast) rowClass="bg-yellow-500 text-black";
 if(index===last) rowClass="bg-red-600";
 }
 
-if(ligaNum===4){
+if(liga===4){
 if(index===0) rowClass="bg-green-600";
 if(index===1) rowClass="bg-yellow-500 text-black";
 }
