@@ -7,22 +7,25 @@
 <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
-<body class="bg-gray-950 text-white min-h-screen">
+<body class="bg-gray-900 text-white min-h-screen">
 <div class="max-w-6xl mx-auto p-6">
 
 <h1 class="text-4xl font-bold text-center mb-8">
 🎯 Kirschtarmyliga 1.0
 </h1>
 
-<!-- ADMIN LOGIN -->
+<!-- LOGIN -->
 <div class="bg-gray-800 p-4 rounded-xl mb-6 text-center">
-<input id="adminPass" type="password" placeholder="Admin Passwort"
+<input id="adminEmail" type="email" placeholder="Admin Email"
+class="p-2 text-black rounded mb-2 w-64">
+<input id="adminPass" type="password" placeholder="Passwort"
 class="p-2 text-black rounded mb-2 w-64">
 <div>
 <button onclick="login()" class="bg-green-600 px-4 py-2 rounded">Login</button>
 <button onclick="logout()" id="logoutBtn"
 class="bg-red-600 px-4 py-2 rounded hidden">Logout</button>
 </div>
+<p id="loginStatus" class="mt-2 text-sm text-red-400"></p>
 </div>
 
 <!-- LIGA BUTTONS -->
@@ -104,22 +107,37 @@ Spiel speichern
 </div>
 
 <script>
-const ADMIN_PASSWORD = "dart2026"; 
+const ADMIN_EMAIL = "janblut18@gmail.com";
+const ADMIN_PASSWORD = "dart2026";
+
 let currentLiga = "liga1";
 let isAdmin = false;
 
 function login(){
-if(adminPass.value === ADMIN_PASSWORD){
+if(adminEmail.value === ADMIN_EMAIL && adminPass.value === ADMIN_PASSWORD){
 isAdmin = true;
-addMatchBtn.classList.remove("hidden");
-addPlayerBtn.classList.remove("hidden");
-deleteHeader.classList.remove("hidden");
-logoutBtn.classList.remove("hidden");
+localStorage.setItem("adminLogged","true");
+enableAdmin();
+loginStatus.innerText = "";
+}else{
+loginStatus.innerText = "Falsche Email oder Passwort!";
 }
 }
 
 function logout(){
 isAdmin = false;
+localStorage.removeItem("adminLogged");
+disableAdmin();
+}
+
+function enableAdmin(){
+addMatchBtn.classList.remove("hidden");
+addPlayerBtn.classList.remove("hidden");
+deleteHeader.classList.remove("hidden");
+logoutBtn.classList.remove("hidden");
+}
+
+function disableAdmin(){
 addMatchBtn.classList.add("hidden");
 addPlayerBtn.classList.add("hidden");
 deleteHeader.classList.add("hidden");
@@ -260,7 +278,13 @@ setData("matches_"+currentLiga,matches);
 loadMatches();
 }
 
+if(localStorage.getItem("adminLogged")==="true"){
+isAdmin=true;
+enableAdmin();
+}
+
 switchLiga("liga1");
 </script>
+
 </body>
 </html>
