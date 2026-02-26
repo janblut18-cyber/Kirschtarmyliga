@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Kirschtarmyliga 1.0</title>
+<title>Kirschtarmyliga 1.1</title>
 <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
@@ -12,9 +12,10 @@
 <div class="max-w-6xl mx-auto p-6">
 
 <h1 class="text-4xl font-bold text-center mb-8">
-🎯 Kirschtarmyliga 1.0
+🎯 Kirschtarmyliga 1.1
 </h1>
 
+<!-- LOGIN -->
 <div class="bg-gray-800 p-4 rounded-xl mb-6 text-center">
 <input id="email" type="email" placeholder="E-Mail"
 class="p-2 text-black rounded mb-2 w-64">
@@ -32,25 +33,26 @@ Logout
 </div>
 </div>
 
+<!-- LIGA SWITCH -->
 <div class="flex justify-center gap-4 mb-6">
-<button onclick="switchLiga('liga1')" 
-class="bg-blue-600 px-4 py-2 rounded">
+<button onclick="switchLiga('liga1')" class="bg-blue-600 px-4 py-2 rounded">
 Liga 1
 </button>
-<button onclick="switchLiga('liga2')" 
-class="bg-purple-600 px-4 py-2 rounded">
+<button onclick="switchLiga('liga2')" class="bg-purple-600 px-4 py-2 rounded">
 Liga 2
 </button>
 </div>
 
 <h2 id="ligaTitle" class="text-2xl font-bold text-center mb-4"></h2>
 
+<!-- SPIELPLAN -->
 <div class="bg-gray-800 p-6 rounded-xl mb-8">
 <h3 class="text-xl font-bold mb-4">🗓 Spielplan</h3>
 
 <table class="w-full text-center" id="matchTable">
 <thead class="bg-gray-700">
 <tr>
+<th>Spieltag</th>
 <th>Datum</th>
 <th>Heim</th>
 <th>Gast</th>
@@ -68,7 +70,8 @@ class="mt-4 bg-blue-600 px-4 py-2 rounded hidden">
 </button>
 </div>
 
-<div class="bg-gray-800 p-6 rounded-xl">
+<!-- TABELLE -->
+<div class="bg-gray-800 p-6 rounded-xl mb-8">
 <h3 class="text-xl font-bold mb-4">📊 Tabelle</h3>
 
 <table class="w-full text-center" id="leagueTable">
@@ -105,9 +108,7 @@ messagingSenderId: "661130390257",
 appId: "1:661130390257:web:469047a1dec589eb321750"
 };
 
-const ADMIN_EMAILS = [
-"janblut18@gmail.com"
-];
+const ADMIN_EMAILS = ["janblut18@gmail.com"];
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
@@ -131,34 +132,34 @@ await signOut(auth);
 onAuthStateChanged(auth,user=>{
 if(user && ADMIN_EMAILS.includes(user.email)){
 isAdmin = true;
-document.getElementById("addMatchBtn").classList.remove("hidden");
-document.getElementById("deleteHeader").classList.remove("hidden");
-document.getElementById("logoutBtn").classList.remove("hidden");
+addMatchBtn.classList.remove("hidden");
+deleteHeader.classList.remove("hidden");
+logoutBtn.classList.remove("hidden");
 }else{
 isAdmin = false;
-document.getElementById("addMatchBtn").classList.add("hidden");
-document.getElementById("deleteHeader").classList.add("hidden");
-document.getElementById("logoutBtn").classList.add("hidden");
+addMatchBtn.classList.add("hidden");
+deleteHeader.classList.add("hidden");
+logoutBtn.classList.add("hidden");
 }
 });
 
 window.switchLiga = function(liga){
 currentLiga = liga;
-document.getElementById("ligaTitle").innerText =
-liga === "liga1" ? "Liga 1" : "Liga 2";
+ligaTitle.innerText = liga === "liga1" ? "Liga 1" : "Liga 2";
 loadMatches();
 }
 
 window.addMatch = async function(){
 if(!isAdmin) return;
 
+const spieltag = prompt("Spieltag (z.B 1):");
 const home = prompt("Heimteam:");
 const away = prompt("Gastteam:");
 const result = prompt("Ergebnis (z.B 6:4):");
 const date = new Date().toISOString().split("T")[0];
 
 await addDoc(collection(db,"matches"),
-{liga:currentLiga,home,away,result,date});
+{liga:currentLiga,spieltag:Number(spieltag),home,away,result,date});
 }
 
 window.deleteMatch = async function(id){
@@ -171,17 +172,25 @@ let tbody = document.querySelector("#matchTable tbody");
 tbody.innerHTML="";
 let tableData={};
 
+let matches=[];
+
 snapshot.forEach(docSnap=>{
 let m=docSnap.data();
 if(m.liga!==currentLiga) return;
+matches.push({id:docSnap.id,...m});
+});
 
+matches.sort((a,b)=>a.spieltag-b.spieltag);
+
+matches.forEach(m=>{
 tbody.innerHTML+=`
 <tr>
+<td>${m.spieltag}</td>
 <td>${m.date}</td>
 <td>${m.home}</td>
 <td>${m.away}</td>
 <td>${m.result}</td>
-${isAdmin?`<td><button onclick="deleteMatch('${docSnap.id}')" class="bg-red-600 px-2 rounded">X</button></td>`:""}
+${isAdmin?`<td><button onclick="deleteMatch('${m.id}')" class="bg-red-600 px-2 rounded">X</button></td>`:""}
 </tr>`;
 
 if(!m.result.includes(":")) return;
@@ -210,14 +219,14 @@ tableData[m.away].punkte+=3;
 }
 });
 
-let tableBody=document.querySelector("#leagueTable tbody");
-tableBody.innerHTML="";
+let leagueBody=document.querySelector("#leagueTable tbody");
+leagueBody.innerHTML="";
 
 Object.keys(tableData)
 .sort((a,b)=>tableData[b].punkte-tableData[a].punkte)
 .forEach(team=>{
 let d=tableData[team];
-tableBody.innerHTML+=`
+leagueBody.innerHTML+=`
 <tr>
 <td>${team}</td>
 <td>${d.spiele}</td>
