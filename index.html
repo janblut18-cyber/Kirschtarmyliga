@@ -254,10 +254,20 @@ return (tableData[b].legsPlus-tableData[b].legsMinus)-
 leagueTable.querySelector("tbody").innerHTML="";
 
 teams.forEach((team,index)=>{
-let d=tableData[team];
-let rowClass="";
-if(index===0) rowClass="bg-green-600";
-if(index===teams.length-1) rowClass="bg-red-600";
+let d = tableData[team];
+let rowClass = "";
+
+if(index === 0){
+rowClass = "bg-green-600";
+}
+
+if(index === teams.length - 2 && teams.length > 2){
+rowClass = "bg-yellow-500 text-black";
+}
+
+if(index === teams.length - 1){
+rowClass = "bg-red-600";
+}
 
 leagueTable.querySelector("tbody").innerHTML+=`
 <tr class="${rowClass}">
