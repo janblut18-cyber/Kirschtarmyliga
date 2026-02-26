@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Kirschtarmyliga 2.0</title>
+<title>Kirschtarmyliga 3.0</title>
 <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
@@ -11,7 +11,7 @@
 <div class="max-w-6xl mx-auto p-6">
 
 <h1 class="text-4xl font-bold text-center mb-8">
-🎯 Kirschtarmyliga 2.0
+🎯 Kirschtarmyliga 3.0
 </h1>
 
 <!-- LOGIN -->
@@ -21,18 +21,18 @@ class="p-2 text-black rounded mb-2 w-64">
 <input id="password" type="password" placeholder="Passwort"
 class="p-2 text-black rounded mb-2 w-64">
 <div>
-<button onclick="login()" class="bg-green-600 px-4 py-2 rounded">Login</button>
-<button onclick="logout()" class="bg-red-600 px-4 py-2 rounded">Logout</button>
+<button id="loginBtn" class="bg-green-600 px-4 py-2 rounded">Login</button>
+<button id="logoutBtn" class="bg-red-600 px-4 py-2 rounded">Logout</button>
 </div>
 <p id="loginStatus" class="mt-2 text-sm text-red-400"></p>
 </div>
 
 <!-- LIGA BUTTONS -->
 <div class="flex justify-center gap-4 mb-6">
-<button onclick="switchLiga('liga1')" class="bg-blue-600 px-4 py-2 rounded">Liga 1</button>
-<button onclick="switchLiga('liga2')" class="bg-purple-600 px-4 py-2 rounded">Liga 2</button>
-<button onclick="switchLiga('liga3')" class="bg-green-600 px-4 py-2 rounded">Liga 3</button>
-<button onclick="switchLiga('liga4')" class="bg-red-600 px-4 py-2 rounded">Liga 4</button>
+<button data-liga="liga1" class="ligaBtn bg-blue-600 px-4 py-2 rounded">Liga 1</button>
+<button data-liga="liga2" class="ligaBtn bg-purple-600 px-4 py-2 rounded">Liga 2</button>
+<button data-liga="liga3" class="ligaBtn bg-green-600 px-4 py-2 rounded">Liga 3</button>
+<button data-liga="liga4" class="ligaBtn bg-red-600 px-4 py-2 rounded">Liga 4</button>
 </div>
 
 <h2 id="ligaTitle" class="text-2xl font-bold text-center mb-4"></h2>
@@ -40,9 +40,8 @@ class="p-2 text-black rounded mb-2 w-64">
 <!-- SPIELER -->
 <div class="bg-gray-800 p-6 rounded-xl mb-8">
 <h3 class="text-xl font-bold mb-4">👥 Spieler</h3>
-<ul id="playerList" class="mb-4 space-y-1"></ul>
-<button id="addPlayerBtn" onclick="addPlayer()"
-class="bg-green-600 px-4 py-2 rounded hidden">
+<ul id="playerList" class="mb-4 space-y-2"></ul>
+<button id="addPlayerBtn" class="bg-green-600 px-4 py-2 rounded hidden">
 ➕ Spieler hinzufügen
 </button>
 </div>
@@ -60,8 +59,7 @@ class="text-black p-2 rounded">
 class="text-black p-2 rounded">
 </div>
 
-<button id="addMatchBtn" onclick="addMatch()"
-class="bg-blue-600 px-4 py-2 rounded hidden">
+<button id="addMatchBtn" class="bg-blue-600 px-4 py-2 rounded hidden">
 Spiel speichern
 </button>
 
@@ -74,6 +72,7 @@ Spiel speichern
 <th>Heim</th>
 <th>Gast</th>
 <th>Ergebnis</th>
+<th id="deleteHeader" class="hidden">❌</th>
 </tr>
 </thead>
 <tbody id="matchTable"></tbody>
@@ -106,7 +105,7 @@ Spiel speichern
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDb87wTtntcY4VQ9WjekaA3CLYwW2bNrmQ",
@@ -121,57 +120,64 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-let currentLiga="liga1";
-let isAdmin=false;
+let currentLiga = "liga1";
+let isAdmin = false;
 
-onAuthStateChanged(auth,(user)=>{
-if(user && user.email==="janblut18@gmail.com"){
-isAdmin=true;
-addPlayerBtn.classList.remove("hidden");
-addMatchBtn.classList.remove("hidden");
-}else{
-isAdmin=false;
-addPlayerBtn.classList.add("hidden");
-addMatchBtn.classList.add("hidden");
-}
-});
+const loginBtn = document.getElementById("loginBtn");
+const logoutBtn = document.getElementById("logoutBtn");
+const addPlayerBtn = document.getElementById("addPlayerBtn");
+const addMatchBtn = document.getElementById("addMatchBtn");
+const deleteHeader = document.getElementById("deleteHeader");
 
-window.login = async function(){
+loginBtn.onclick = async () => {
 try{
 await signInWithEmailAndPassword(auth,email.value,password.value);
 loginStatus.innerText="Erfolgreich eingeloggt";
 }catch(e){
 loginStatus.innerText=e.message;
 }
-}
+};
 
-window.logout = function(){
-signOut(auth);
-loginStatus.innerText="Ausgeloggt";
-}
+logoutBtn.onclick = () => signOut(auth);
 
-window.switchLiga = function(liga){
-currentLiga=liga;
-ligaTitle.innerText="Liga "+liga.replace("liga","");
-loadData();
+onAuthStateChanged(auth,(user)=>{
+if(user && user.email==="janblut18@gmail.com"){
+isAdmin=true;
+addPlayerBtn.classList.remove("hidden");
+addMatchBtn.classList.remove("hidden");
+deleteHeader.classList.remove("hidden");
+}else{
+isAdmin=false;
+addPlayerBtn.classList.add("hidden");
+addMatchBtn.classList.add("hidden");
+deleteHeader.classList.add("hidden");
 }
+});
 
-window.addPlayer = async function(){
-if(!isAdmin) return;
+document.querySelectorAll(".ligaBtn").forEach(btn=>{
+btn.onclick=()=>switchLiga(btn.dataset.liga);
+});
+
+addPlayerBtn.onclick = async ()=>{
 const name=prompt("Spielername:");
 if(!name) return;
 await addDoc(collection(db,currentLiga+"_players"),{name});
 loadData();
-}
+};
 
-window.addMatch = async function(){
-if(!isAdmin) return;
+addMatchBtn.onclick = async ()=>{
 await addDoc(collection(db,currentLiga+"_matches"),{
 spieltag:spieltagInput.value,
 heim:heimSelect.value,
 gast:gastSelect.value,
 result:resultInput.value
 });
+loadData();
+};
+
+async function switchLiga(liga){
+currentLiga=liga;
+ligaTitle.innerText="Liga "+liga.replace("liga","");
 loadData();
 }
 
@@ -182,27 +188,53 @@ heimSelect.innerHTML="";
 gastSelect.innerHTML="";
 matchTable.innerHTML="";
 leagueTable.innerHTML="";
+
 let tableData={};
 
 const playersSnap=await getDocs(collection(db,currentLiga+"_players"));
-playersSnap.forEach(doc=>{
-const p=doc.data().name;
-playerList.innerHTML+=`<li class="bg-gray-700 p-2 rounded">${p}</li>`;
+playersSnap.forEach(d=>{
+const p=d.data().name;
+let li=document.createElement("li");
+li.className="flex justify-between bg-gray-700 p-2 rounded";
+li.innerHTML=p;
+
+if(isAdmin){
+let btn=document.createElement("button");
+btn.innerText="X";
+btn.className="text-red-400";
+btn.onclick=async ()=>{ await deleteDoc(doc(db,currentLiga+"_players",d.id)); loadData(); };
+li.appendChild(btn);
+}
+
+playerList.appendChild(li);
 heimSelect.innerHTML+=`<option>${p}</option>`;
 gastSelect.innerHTML+=`<option>${p}</option>`;
 tableData[p]={spiele:0,siege:0,unentschieden:0,legsPlus:0,legsMinus:0,punkte:0};
 });
 
 const matchSnap=await getDocs(collection(db,currentLiga+"_matches"));
-matchSnap.forEach(doc=>{
-const m=doc.data();
-matchTable.innerHTML+=`
-<tr>
+matchSnap.forEach(d=>{
+const m=d.data();
+
+let row=document.createElement("tr");
+row.innerHTML=`
 <td>${m.spieltag}</td>
 <td>${m.heim}</td>
 <td>${m.gast}</td>
 <td>${m.result}</td>
-</tr>`;
+`;
+
+if(isAdmin){
+let del=document.createElement("td");
+let btn=document.createElement("button");
+btn.innerText="X";
+btn.className="text-red-400";
+btn.onclick=async ()=>{ await deleteDoc(doc(db,currentLiga+"_matches",d.id)); loadData(); };
+del.appendChild(btn);
+row.appendChild(del);
+}
+
+matchTable.appendChild(row);
 
 if(!m.result.includes(":")) return;
 let [h,a]=m.result.split(":").map(Number);
@@ -224,7 +256,7 @@ tableData[m.gast].punkte+=1;
 }
 });
 
-let teams = Object.keys(tableData).sort((a,b)=>{
+let teams=Object.keys(tableData).sort((a,b)=>{
 if(tableData[b].punkte!==tableData[a].punkte)
 return tableData[b].punkte-tableData[a].punkte;
 return (tableData[b].legsPlus-tableData[b].legsMinus)-
@@ -243,19 +275,16 @@ if(liga===1){
 if(index===secondLast) rowClass="bg-yellow-500 text-black";
 if(index===last) rowClass="bg-red-600";
 }
-
 if(liga===2){
 if(index===0) rowClass="bg-green-600";
 if(index===secondLast) rowClass="bg-yellow-500 text-black";
 if(index===last) rowClass="bg-red-600";
 }
-
 if(liga===3){
 if(index===0) rowClass="bg-green-600";
 if(index===secondLast) rowClass="bg-yellow-500 text-black";
 if(index===last) rowClass="bg-red-600";
 }
-
 if(liga===4){
 if(index===0) rowClass="bg-green-600";
 if(index===1) rowClass="bg-yellow-500 text-black";
