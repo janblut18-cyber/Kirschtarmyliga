@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Kirschtarmyliga 1.3</title>
+<title>Kirschtarmyliga 2.0</title>
 <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
@@ -12,7 +12,7 @@
 <div class="max-w-6xl mx-auto p-6">
 
 <h1 class="text-4xl font-bold text-center mb-8">
-🎯 Kirschtarmyliga 1.3
+🎯 Kirschtarmyliga 2.0
 </h1>
 
 <!-- LOGIN -->
@@ -21,29 +21,33 @@
 class="p-2 text-black rounded mb-2 w-64">
 <input id="password" type="password" placeholder="Passwort"
 class="p-2 text-black rounded mb-2 w-64">
-
 <div class="mt-2">
-<button onclick="login()" class="bg-green-600 px-4 py-2 rounded">
-Login
-</button>
+<button onclick="login()" class="bg-green-600 px-4 py-2 rounded">Login</button>
 <button onclick="logout()" id="logoutBtn"
-class="bg-red-600 px-4 py-2 rounded hidden">
-Logout
-</button>
+class="bg-red-600 px-4 py-2 rounded hidden">Logout</button>
 </div>
 </div>
 
 <!-- LIGA SWITCH -->
 <div class="flex justify-center gap-4 mb-6">
-<button onclick="switchLiga('liga1')" class="bg-blue-600 px-4 py-2 rounded">
-Liga 1
-</button>
-<button onclick="switchLiga('liga2')" class="bg-purple-600 px-4 py-2 rounded">
-Liga 2
-</button>
+<button onclick="switchLiga('liga1')" class="bg-blue-600 px-4 py-2 rounded">Liga 1</button>
+<button onclick="switchLiga('liga2')" class="bg-purple-600 px-4 py-2 rounded">Liga 2</button>
 </div>
 
 <h2 id="ligaTitle" class="text-2xl font-bold text-center mb-4"></h2>
+
+<!-- SPIELERLISTE -->
+<div class="bg-gray-800 p-6 rounded-xl mb-8">
+<h3 class="text-xl font-bold mb-4">👥 Spieler</h3>
+
+<ul id="playerList" class="mb-4 space-y-1"></ul>
+
+<button id="addPlayerBtn"
+onclick="addPlayer()"
+class="bg-green-600 px-4 py-2 rounded hidden">
+➕ Spieler hinzufügen
+</button>
+</div>
 
 <!-- SPIELPLAN -->
 <div class="bg-gray-800 p-6 rounded-xl mb-8">
@@ -53,7 +57,6 @@ Liga 2
 <thead class="bg-gray-700">
 <tr>
 <th>Spieltag</th>
-<th>Datum</th>
 <th>Heim</th>
 <th>Gast</th>
 <th>Ergebnis</th>
@@ -71,7 +74,7 @@ class="mt-4 bg-blue-600 px-4 py-2 rounded hidden">
 </div>
 
 <!-- TABELLE -->
-<div class="bg-gray-800 p-6 rounded-xl mb-8">
+<div class="bg-gray-800 p-6 rounded-xl">
 <h3 class="text-xl font-bold mb-4">📊 Tabelle</h3>
 
 <table class="w-full text-center" id="leagueTable">
@@ -85,27 +88,6 @@ class="mt-4 bg-blue-600 px-4 py-2 rounded hidden">
 <th>Leg-</th>
 <th>Diff</th>
 <th>P</th>
-</tr>
-</thead>
-<tbody></tbody>
-</table>
-</div>
-
-<!-- SPIELERÜBERSICHT -->
-<div class="bg-gray-800 p-6 rounded-xl">
-<h3 class="text-xl font-bold mb-4">👤 Spielerübersicht</h3>
-
-<table class="w-full text-center" id="playerTable">
-<thead class="bg-gray-700">
-<tr>
-<th>Spieler</th>
-<th>Spiele</th>
-<th>Siege</th>
-<th>Unentschieden</th>
-<th>Leg+</th>
-<th>Leg-</th>
-<th>Diff</th>
-<th>Punkte</th>
 </tr>
 </thead>
 <tbody></tbody>
@@ -139,12 +121,11 @@ const db = getFirestore(app);
 let currentLiga = "liga1";
 let isAdmin = false;
 
+const playersRef = collection(db, "players");
+const matchesRef = collection(db, "matches");
+
 window.login = async function(){
-await signInWithEmailAndPassword(
-auth,
-document.getElementById("email").value,
-document.getElementById("password").value
-);
+await signInWithEmailAndPassword(auth,email.value,password.value);
 }
 
 window.logout = async function(){
@@ -155,11 +136,13 @@ onAuthStateChanged(auth,user=>{
 if(user && ADMIN_EMAILS.includes(user.email)){
 isAdmin = true;
 addMatchBtn.classList.remove("hidden");
+addPlayerBtn.classList.remove("hidden");
 deleteHeader.classList.remove("hidden");
 logoutBtn.classList.remove("hidden");
 }else{
 isAdmin = false;
 addMatchBtn.classList.add("hidden");
+addPlayerBtn.classList.add("hidden");
 deleteHeader.classList.add("hidden");
 logoutBtn.classList.add("hidden");
 }
@@ -168,97 +151,117 @@ logoutBtn.classList.add("hidden");
 window.switchLiga = function(liga){
 currentLiga = liga;
 ligaTitle.innerText = liga === "liga1" ? "Liga 1" : "Liga 2";
+loadPlayers();
 loadMatches();
+}
+
+window.addPlayer = async function(){
+if(!isAdmin) return;
+const name = prompt("Spielername:");
+await addDoc(playersRef,{liga:currentLiga,name});
+}
+
+function loadPlayers(){
+onSnapshot(playersRef,snapshot=>{
+playerList.innerHTML="";
+snapshot.forEach(docSnap=>{
+const p = docSnap.data();
+if(p.liga!==currentLiga) return;
+
+playerList.innerHTML+=`
+<li class="flex justify-between bg-gray-700 p-2 rounded">
+${p.name}
+${isAdmin?`<button onclick="deletePlayer('${docSnap.id}')" class="text-red-400">X</button>`:""}
+</li>`;
+});
+});
+}
+
+window.deletePlayer = async function(id){
+await deleteDoc(doc(db,"players",id));
 }
 
 window.addMatch = async function(){
 if(!isAdmin) return;
 
+let players=[];
+const snapshot = await playersRef.get();
+snapshot.forEach(docSnap=>{
+if(docSnap.data().liga===currentLiga)
+players.push(docSnap.data().name);
+});
+
+const heim = prompt("Heimspieler:\n"+players.join("\n"));
+const gast = prompt("Gastspieler:\n"+players.join("\n"));
 const spieltag = prompt("Spieltag:");
-const home = prompt("Heimteam:");
-const away = prompt("Gastteam:");
-const result = prompt("Ergebnis (z.B 6:4 oder 5:5):");
-const date = new Date().toISOString().split("T")[0];
+const result = prompt("Ergebnis (z.B 6:4):");
 
-await addDoc(collection(db,"matches"),
-{liga:currentLiga,spieltag:Number(spieltag)||1,home,away,result,date});
-}
-
-window.deleteMatch = async function(id){
-await deleteDoc(doc(db,"matches",id));
+await addDoc(matchesRef,{
+liga:currentLiga,
+heim,
+gast,
+spieltag:Number(spieltag)||1,
+result
+});
 }
 
 function loadMatches(){
-onSnapshot(collection(db,"matches"), snapshot=>{
-let tbody = document.querySelector("#matchTable tbody");
-tbody.innerHTML="";
+onSnapshot(matchesRef,snapshot=>{
+matchTable.querySelector("tbody").innerHTML="";
 let tableData={};
-let matches=[];
 
 snapshot.forEach(docSnap=>{
-let m=docSnap.data();
+const m=docSnap.data();
 if(m.liga!==currentLiga) return;
-matches.push({id:docSnap.id,...m});
-});
 
-matches.sort((a,b)=>(a.spieltag||1)-(b.spieltag||1));
-
-matches.forEach(m=>{
-tbody.innerHTML+=`
+matchTable.querySelector("tbody").innerHTML+=`
 <tr>
-<td>${m.spieltag || 1}</td>
-<td>${m.date}</td>
-<td>${m.home}</td>
-<td>${m.away}</td>
+<td>${m.spieltag}</td>
+<td>${m.heim}</td>
+<td>${m.gast}</td>
 <td>${m.result}</td>
-${isAdmin?`<td><button onclick="deleteMatch('${m.id}')" class="bg-red-600 px-2 rounded">X</button></td>`:""}
+${isAdmin?`<td><button onclick="deleteMatch('${docSnap.id}')" class="text-red-400">X</button></td>`:""}
 </tr>`;
 
 if(!m.result.includes(":")) return;
-
 let [h,a]=m.result.split(":").map(Number);
 
-if(!tableData[m.home])
-tableData[m.home]={spiele:0,siege:0,unentschieden:0,legsPlus:0,legsMinus:0,punkte:0};
+if(!tableData[m.heim])
+tableData[m.heim]={spiele:0,siege:0,unentschieden:0,legsPlus:0,legsMinus:0,punkte:0};
 
-if(!tableData[m.away])
-tableData[m.away]={spiele:0,siege:0,unentschieden:0,legsPlus:0,legsMinus:0,punkte:0};
+if(!tableData[m.gast])
+tableData[m.gast]={spiele:0,siege:0,unentschieden:0,legsPlus:0,legsMinus:0,punkte:0};
 
-tableData[m.home].spiele++;
-tableData[m.away].spiele++;
-tableData[m.home].legsPlus+=h;
-tableData[m.home].legsMinus+=a;
-tableData[m.away].legsPlus+=a;
-tableData[m.away].legsMinus+=h;
+tableData[m.heim].spiele++;
+tableData[m.gast].spiele++;
+tableData[m.heim].legsPlus+=h;
+tableData[m.heim].legsMinus+=a;
+tableData[m.gast].legsPlus+=a;
+tableData[m.gast].legsMinus+=h;
 
-if(h > a){
-tableData[m.home].siege++;
-tableData[m.home].punkte+=3;
+if(h>a){
+tableData[m.heim].siege++;
+tableData[m.heim].punkte+=3;
 }
-else if(h < a){
-tableData[m.away].siege++;
-tableData[m.away].punkte+=3;
+else if(h<a){
+tableData[m.gast].siege++;
+tableData[m.gast].punkte+=3;
 }
 else{
-tableData[m.home].unentschieden++;
-tableData[m.away].unentschieden++;
-tableData[m.home].punkte+=1;
-tableData[m.away].punkte+=1;
+tableData[m.heim].unentschieden++;
+tableData[m.gast].unentschieden++;
+tableData[m.heim].punkte+=1;
+tableData[m.gast].punkte+=1;
 }
 });
 
-let leagueBody=document.querySelector("#leagueTable tbody");
-let playerBody=document.querySelector("#playerTable tbody");
-
-leagueBody.innerHTML="";
-playerBody.innerHTML="";
+leagueTable.querySelector("tbody").innerHTML="";
 
 Object.keys(tableData)
 .sort((a,b)=>tableData[b].punkte-tableData[a].punkte)
 .forEach(team=>{
 let d=tableData[team];
-
-let row=`
+leagueTable.querySelector("tbody").innerHTML+=`
 <tr>
 <td>${team}</td>
 <td>${d.spiele}</td>
@@ -269,11 +272,12 @@ let row=`
 <td>${d.legsPlus-d.legsMinus}</td>
 <td>${d.punkte}</td>
 </tr>`;
+});
+});
+}
 
-leagueBody.innerHTML+=row;
-playerBody.innerHTML+=row;
-});
-});
+window.deleteMatch = async function(id){
+await deleteDoc(doc(db,"matches",id));
 }
 
 switchLiga("liga1");
