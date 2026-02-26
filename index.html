@@ -59,7 +59,7 @@ class="bg-green-600 px-4 py-2 rounded hidden">
 class="text-black p-2 rounded">
 <input id="resultInput" placeholder="Ergebnis z.B 6:4"
 class="text-black p-2 rounded">
-<input type="file" id="fileInput" class="text-white col-span-2">
+<input type="file" id="fileInput" class="text-white col-span-2 hidden">
 </div>
 
 <button id="addMatchBtn"
@@ -88,7 +88,6 @@ Spiel speichern
 <!-- TABELLE -->
 <div class="bg-gray-800 p-6 rounded-xl">
 <h3 class="text-xl font-bold mb-4">📊 Tabelle</h3>
-
 <table class="w-full text-center" id="leagueTable">
 <thead class="bg-gray-700">
 <tr>
@@ -148,12 +147,14 @@ isAdmin=true;
 addMatchBtn.classList.remove("hidden");
 addPlayerBtn.classList.remove("hidden");
 deleteHeader.classList.remove("hidden");
+fileInput.classList.remove("hidden");
 logoutBtn.classList.remove("hidden");
 }else{
 isAdmin=false;
 addMatchBtn.classList.add("hidden");
 addPlayerBtn.classList.add("hidden");
 deleteHeader.classList.add("hidden");
+fileInput.classList.add("hidden");
 logoutBtn.classList.add("hidden");
 }
 });
@@ -180,12 +181,10 @@ gastSelect.innerHTML="";
 snap.forEach(docSnap=>{
 const p=docSnap.data();
 if(p.liga!==currentLiga)return;
-
 playerList.innerHTML+=`<li class="flex justify-between bg-gray-700 p-2 rounded">
 ${p.name}
 ${isAdmin?`<button onclick="deletePlayer('${docSnap.id}')" class="text-red-400">X</button>`:""}
 </li>`;
-
 heimSelect.innerHTML+=`<option>${p.name}</option>`;
 gastSelect.innerHTML+=`<option>${p.name}</option>`;
 });
@@ -198,7 +197,6 @@ window.addMatch=async()=>{
 if(!isAdmin)return;
 
 let fileURL="";
-
 if(fileInput.files.length>0){
 const file=fileInput.files[0];
 const storageRef=ref(storage,"spiele/"+Date.now()+"_"+file.name);
@@ -241,7 +239,6 @@ let [h,a]=m.result.split(":").map(Number);
 
 if(!tableData[m.heim])
 tableData[m.heim]={spiele:0,siege:0,unentschieden:0,legsPlus:0,legsMinus:0,punkte:0};
-
 if(!tableData[m.gast])
 tableData[m.gast]={spiele:0,siege:0,unentschieden:0,legsPlus:0,legsMinus:0,punkte:0};
 
@@ -252,14 +249,8 @@ tableData[m.heim].legsMinus+=a;
 tableData[m.gast].legsPlus+=a;
 tableData[m.gast].legsMinus+=h;
 
-if(h>a){
-tableData[m.heim].siege++;
-tableData[m.heim].punkte+=3;
-}
-else if(h<a){
-tableData[m.gast].siege++;
-tableData[m.gast].punkte+=3;
-}
+if(h>a){tableData[m.heim].siege++;tableData[m.heim].punkte+=3;}
+else if(h<a){tableData[m.gast].siege++;tableData[m.gast].punkte+=3;}
 else{
 tableData[m.heim].unentschieden++;
 tableData[m.gast].unentschieden++;
