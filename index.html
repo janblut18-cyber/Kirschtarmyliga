@@ -1,180 +1,87 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Kirschtarmyliga</title>
-<script src="https://cdn.tailwindcss.com"></script>
+  <meta charset="UTF-8">
+  <title>Kirschtarmy Liga</title>
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js"></script>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 400px;
+      margin: 50px auto;
+      text-align: center;
+    }
+    input {
+      width: 100%;
+      margin: 8px 0;
+      padding: 8px;
+    }
+    button {
+      padding: 10px;
+      width: 100%;
+      background: blue;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+  </style>
 </head>
-<body class="bg-gray-900 text-white p-6">
 
-<div class="max-w-6xl mx-auto">
-<h1 class="text-3xl font-bold mb-6">🎯 Kirschtarmyliga (2 Ligen LIVE)</h1>
+<body>
+  <h1>Admin Login</h1>
 
-<div class="mb-6">
-<input type="password" id="password" placeholder="Admin Passwort" class="p-2 text-black rounded">
-<button onclick="login()" class="bg-green-600 px-4 py-2 rounded">Login</button>
-</div>
+  <input type="email" id="email" placeholder="E-Mail">
+  <input type="password" id="password" placeholder="Passwort">
+  <button onclick="login()">Login</button>
 
-<div class="flex gap-4 mb-6">
-<button onclick="switchLiga('liga1')" class="bg-blue-600 px-4 py-2 rounded">Liga 1</button>
-<button onclick="switchLiga('liga2')" class="bg-purple-600 px-4 py-2 rounded">Liga 2</button>
-</div>
+  <p id="status"></p>
 
-<h2 id="ligaTitle" class="text-xl font-bold mb-4"></h2>
+  <script>
+    // 🔴 Firebase konfigurieren (ersetze mit deinen Daten)
+    const firebaseConfig = {
+      apiKey: "DEIN_API_KEY",
+      authDomain: "DEIN_AUTH_DOMAIN",
+      projectId: "DEIN_PROJECT_ID",
+    };
 
-<div class="bg-gray-800 p-6 rounded-2xl shadow-lg mb-8">
-<h3 class="text-lg font-bold mb-4">🗓 Spielplan</h3>
-<table class="w-full text-white" id="matchTable">
-<thead>
-<tr class="bg-gray-700">
-<th>Datum</th>
-<th>Heim</th>
-<th>Gast</th>
-<th>Ergebnis</th>
-<th id="deleteHeader" class="hidden">Löschen</th>
-</tr>
-</thead>
-<tbody></tbody>
-</table>
+    // Firebase initialisieren
+    firebase.initializeApp(firebaseConfig);
 
-<button id="addMatchBtn" onclick="addMatch()" 
-class="mt-4 bg-blue-600 px-4 py-2 rounded hidden">
-➕ Spiel hinzufügen
-</button>
-</div>
+    const auth = firebase.auth();
 
-<div class="bg-gray-800 p-6 rounded-2xl shadow-lg">
-<h3 class="text-lg font-bold mb-4">📊 Tabelle</h3>
-<table class="w-full text-white" id="leagueTable">
-<thead>
-<tr class="bg-gray-700">
-<th>Team</th>
-<th>Spiele</th>
-<th>Siege</th>
-<th>Legs +</th>
-<th>Legs -</th>
-<th>Diff</th>
-<th>Punkte</th>
-</tr>
-</thead>
-<tbody></tbody>
-</table>
-</div>
-</div>
+    // Funktion: Login
+    function login() {
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
 
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot }
-from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+      auth.signInWithEmailAndPassword(email, password)
+        .then(() => {
+          checkAdmin();
+        })
+        .catch(error => {
+          document.getElementById("status").textContent = error.message;
+        });
+    }
 
-const firebaseConfig = {
-  apiKey: "AIzaSyDb87wTtntcY4VQ9WjekaA3CLYwW2bNrmQ",
-  authDomain: "kirschtarmyliga.firebaseapp.com",
-  projectId: "kirschtarmyliga",
-  storageBucket: "kirschtarmyliga.firebasestorage.app",
-  messagingSenderId: "661130390257",
-  appId: "1:661130390257:web:469047a1dec589eb321750"
-};
+    // Admin-Check
+    function checkAdmin() {
+      const adminEmails = [
+        "DEINE.ADMIN@EMAIL.de"
+      ];
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+      const user = auth.currentUser;
 
-let currentLiga = "liga1";
-let isAdmin = false;
-const ADMIN_PASSWORD = "admin123";
-
-window.login = function(){
-if(document.getElementById("password").value === ADMIN_PASSWORD){
-isAdmin = true;
-document.getElementById("addMatchBtn").classList.remove("hidden");
-document.getElementById("deleteHeader").classList.remove("hidden");
-alert("Admin eingeloggt 👑");
-}
-}
-
-window.switchLiga = function(liga){
-currentLiga = liga;
-document.getElementById("ligaTitle").innerText = liga === "liga1" ? "Liga 1" : "Liga 2";
-loadMatches();
-}
-
-window.addMatch = async function(){
-if(!isAdmin) return;
-const home = prompt("Heimteam:");
-const away = prompt("Gastteam:");
-const result = prompt("Ergebnis (z.B 6:4):");
-const date = new Date().toISOString().split("T")[0];
-
-await addDoc(collection(db, "matches"), {
-liga: currentLiga,
-home, away, result, date
-});
-}
-
-function loadMatches(){
-onSnapshot(collection(db, "matches"), (snapshot)=>{
-const tbody = document.querySelector("#matchTable tbody");
-tbody.innerHTML="";
-let tableData={};
-
-snapshot.forEach(docSnap=>{
-const m = docSnap.data();
-if(m.liga !== currentLiga) return;
-
-tbody.innerHTML+=`
-<tr>
-<td>${m.date}</td>
-<td>${m.home}</td>
-<td>${m.away}</td>
-<td>${m.result}</td>
-${isAdmin ? `<td><button onclick="deleteMatch('${docSnap.id}')" class="bg-red-600 px-2 py-1 rounded">X</button></td>` : ""}
-</tr>`;
-
-if(!m.result.includes(":")) return;
-let [h,a]=m.result.split(":").map(Number);
-
-if(!tableData[m.home]) tableData[m.home]={spiele:0,siege:0,legsPlus:0,legsMinus:0,punkte:0};
-if(!tableData[m.away]) tableData[m.away]={spiele:0,siege:0,legsPlus:0,legsMinus:0,punkte:0};
-
-tableData[m.home].spiele++;
-tableData[m.away].spiele++;
-tableData[m.home].legsPlus+=h;
-tableData[m.home].legsMinus+=a;
-tableData[m.away].legsPlus+=a;
-tableData[m.away].legsMinus+=h;
-
-if(h>a){tableData[m.home].siege++;tableData[m.home].punkte+=3;}
-else {tableData[m.away].siege++;tableData[m.away].punkte+=3;}
-});
-
-const tableBody=document.querySelector("#leagueTable tbody");
-tableBody.innerHTML="";
-Object.keys(tableData)
-.sort((a,b)=>tableData[b].punkte-tableData[a].punkte)
-.forEach(team=>{
-const d=tableData[team];
-tableBody.innerHTML+=`
-<tr>
-<td>${team}</td>
-<td>${d.spiele}</td>
-<td>${d.siege}</td>
-<td>${d.legsPlus}</td>
-<td>${d.legsMinus}</td>
-<td>${d.legsPlus-d.legsMinus}</td>
-<td>${d.punkte}</td>
-</tr>`;
-});
-});
-}
-
-window.deleteMatch = async function(id){
-if(!isAdmin) return;
-await deleteDoc(doc(db,"matches",id));
-}
-
-switchLiga("liga1");
-</script>
-
+      if (user && adminEmails.includes(user.email)) {
+        window.location.href = "admin.html";
+      } else {
+        alert("Du bist kein Admin!");
+        auth.signOut();
+      }
+    }
+  </script>
 </body>
 </html>
