@@ -2,49 +2,22 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Kirschtarmy Liga Login</title>
-
-  <!-- Firebase CDN -->
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+  <title>Kirschtarmy Liga</title>
 </head>
+<body style="text-align:center; font-family:Arial;">
 
-<body style="text-align:center; margin-top:50px; font-family:Arial;">
+<h1>Kirschtarmy Liga</h1>
 
-<h1>Admin Login</h1>
+<h2>Unsere Ligen</h2>
 
-<input type="email" id="email" placeholder="E-Mail"><br><br>
-<input type="password" id="password" placeholder="Passwort"><br><br>
-<button onclick="login()">Login</button>
+<ul>
+  <li>Liga 1</li>
+  <li>Liga 2</li>
+  <li>Liga 3</li>
+</ul>
 
-<p id="error" style="color:red;"></p>
-
-<script>
-  const firebaseConfig = {
-  apiKey: "AIzaSyDb87wTtntcY4VQ9WjekaA3CLYwW2bNrmQ",
-  authDomain: "kirschtarmyliga.firebaseapp.com",
-  projectId: "kirschtarmyliga",
-  storageBucket: "kirschtarmyliga.firebasestorage.app",
-  messagingSenderId: "661130390257",
-  appId: "1:661130390257:web:469047a1dec589eb321750"
-};
-
-  firebase.initializeApp(firebaseConfig);
-  var auth = firebase.auth();
-
-  function login() {
-    var email = document.getElementById("email").value;
-    var password = document.getElementById("password").value;
-
-    auth.signInWithEmailAndPassword(email, password)
-      .then(function() {
-        alert("Login erfolgreich!");
-      })
-      .catch(function(error) {
-        document.getElementById("error").innerText = error.message;
-      });
-  }
-</script>
+<br><br>
+<a href="login.html">🔐 Admin Login</a>
 
 </body>
 </html>
