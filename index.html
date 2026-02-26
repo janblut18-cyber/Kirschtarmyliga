@@ -1,87 +1,50 @@
 <!DOCTYPE html>
-<html lang="de">
+<html>
 <head>
   <meta charset="UTF-8">
-  <title>Kirschtarmy Liga</title>
+  <title>Kirschtarmy Liga Login</title>
 
-  <!-- Firebase SDKs -->
-  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js"></script>
-
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      max-width: 400px;
-      margin: 50px auto;
-      text-align: center;
-    }
-    input {
-      width: 100%;
-      margin: 8px 0;
-      padding: 8px;
-    }
-    button {
-      padding: 10px;
-      width: 100%;
-      background: blue;
-      color: white;
-      border: none;
-      cursor: pointer;
-    }
-  </style>
+  <!-- Firebase CDN Version 8 -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
 </head>
 
-<body>
-  <h1>Admin Login</h1>
+<body style="text-align:center; margin-top:50px; font-family:Arial;">
 
-  <input type="email" id="email" placeholder="E-Mail">
-  <input type="password" id="password" placeholder="Passwort">
-  <button onclick="login()">Login</button>
+<h1>Admin Login</h1>
 
-  <p id="status"></p>
+<input type="email" id="email" placeholder="E-Mail"><br><br>
+<input type="password" id="password" placeholder="Passwort"><br><br>
+<button onclick="login()">Login</button>
 
-  <script>
-    // 🔴 Firebase konfigurieren (ersetze mit deinen Daten)
-    const firebaseConfig = {
-      apiKey: "DEIN_API_KEY",
-      authDomain: "DEIN_AUTH_DOMAIN",
-      projectId: "DEIN_PROJECT_ID",
-    };
+<p id="error" style="color:red;"></p>
 
-    // Firebase initialisieren
-    firebase.initializeApp(firebaseConfig);
+<script>
+  var firebaseConfig = {
+    apiKey: "AIzaSyDb87wTtntcY4VQ9WjekaA3CLYW2bNrmQ",
+    authDomain: "kirschtarmyliga.firebaseapp.com",
+    projectId: "kirschtarmyliga",
+    storageBucket: "kirschtarmyliga.firebasestorage.app",
+    messagingSenderId: "661130390257",
+    appId: "1:661130390257:web:469047a1dec589eb321750"
+  };
 
-    const auth = firebase.auth();
+  firebase.initializeApp(firebaseConfig);
+  var auth = firebase.auth();
 
-    // Funktion: Login
-    function login() {
-      const email = document.getElementById("email").value;
-      const password = document.getElementById("password").value;
+  function login() {
+    var email = document.getElementById("email").value;
+    var password = document.getElementById("password").value;
 
-      auth.signInWithEmailAndPassword(email, password)
-        .then(() => {
-          checkAdmin();
-        })
-        .catch(error => {
-          document.getElementById("status").textContent = error.message;
-        });
-    }
+    auth.signInWithEmailAndPassword(email, password)
+      .then(function() {
+        alert("Login erfolgreich!");
+      })
+      .catch(function(error) {
+        document.getElementById("error").innerText = error.message;
+      });
+  }
+</script>
 
-    // Admin-Check
-    function checkAdmin() {
-      const adminEmails = [
-        "DEINE.ADMIN@EMAIL.de"
-      ];
-
-      const user = auth.currentUser;
-
-      if (user && adminEmails.includes(user.email)) {
-        window.location.href = "admin.html";
-      } else {
-        alert("Du bist kein Admin!");
-        auth.signOut();
-      }
-    }
-  </script>
 </body>
 </html>
