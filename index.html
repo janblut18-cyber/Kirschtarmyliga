@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kirschtarmyliga</title>
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-white p-6">
+
+<div class="max-w-6xl mx-auto">
+
+<h1 class="text-3xl font-bold mb-6">🎯 Kirschtarmyliga</h1>
+
+<!-- LOGIN -->
+<div id="loginBox" class="mb-6">
+    <input type="password" id="password" placeholder="Admin Passwort" class="p-2 text-black rounded">
+    <button onclick="login()" class="bg-green-600 px-4 py-2 rounded">Login</button>
+</div>
+
+<!-- SPIELPLAN -->
+<div class="bg-gray-800 p-6 rounded-2xl shadow-lg mb-8">
+    <h2 class="text-xl font-bold mb-4">🗓 Spielplan</h2>
+    <table class="w-full text-white" id="matchTable">
+        <thead>
+            <tr class="bg-gray-700">
+                <th>Datum</th>
+                <th>Heim</th>
+                <th>Gast</th>
+                <th>Ergebnis</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <button id="addMatchBtn" onclick="addMatch()" 
+        class="mt-4 bg-blue-600 px-4 py-2 rounded hidden">
+        ➕ Spiel hinzufügen
+    </button>
+</div>
+
+<!-- TABELLE -->
+<div class="bg-gray-800 p-6 rounded-2xl shadow-lg">
+    <h2 class="text-xl font-bold mb-4">📊 Tabelle</h2>
+    <table class="w-full text-white" id="leagueTable">
+        <thead>
+            <tr class="bg-gray-700">
+                <th>Team</th>
+                <th>Spiele</th>
+                <th>Siege</th>
+                <th>Legs +</th>
+                <th>Legs -</th>
+                <th>Diff</th>
+                <th>Punkte</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+</div>
+
+</div>
+
+<script>
+const ADMIN_PASSWORD = "admin123";
+let isAdmin = false;
+
+const matchKey = "darts_matches";
+
+function login() {
+    let pw = document.getElementById("password").value;
+    if(pw === ADMIN_PASSWORD){
+        isAdmin = true;
+        document.getElementById("addMatchBtn").classList.remove("hidden");
+        alert("Admin eingeloggt 👑");
+        reloadMatches();
+    } else {
+        alert("Falsches Passwort!");
+    }
+}
+
+function addMatch(data = {}) {
+    let tbody = document.querySelector("#matchTable tbody");
+    let row = document.createElement("tr");
+
+    row.innerHTML = `
+        <td><input type="date" class="text-black p-1" value="${data.date || ""}"></td>
+        <td><input class="text-black p-1 home" placeholder="Heim" value="${data.home || ""}"></td>
+        <td><input class="text-black p-1 away" placeholder="Gast" value="${data.away || ""}"></td>
+        <td><input class="text-black p-1 result" placeholder="6:4" value="${data.result || ""}"></td>
+    `;
+
+    if(!isAdmin){
+        row.querySelectorAll("input").forEach(i => i.disabled = true);
+    }
+
+    row.querySelector(".result").addEventListener("input", () => {
+        saveMatches();
+        calculateTable();
+    });
+
+    tbody.appendChild(row);
+}
+
+function saveMatches(){
+    let data = [];
+    document.querySelectorAll("#matchTable tbody tr").forEach(row => {
+        let inputs = row.querySelectorAll("input");
+        data.push({
+            date: inputs[0].value,
+            home: inputs[1].value,
+            away: inputs[2].value,
+            result: inputs[3].value
+        });
+    });
+    localStorage.setItem(matchKey, JSON.stringify(data));
+}
+
+function reloadMatches(){
+    document.querySelector("#matchTable tbody").innerHTML = "";
+    let saved = localStorage.getItem(matchKey);
+    if(saved){
+        JSON.parse(saved).forEach(m => addMatch(m));
+    }
+}
+
+function calculateTable(){
+    let tableData = {};
+
+    document.querySelectorAll("#matchTable tbody tr").forEach(row => {
+        let home = row.querySelector(".home").value;
+        let away = row.querySelector(".away").value;
+        let result = row.querySelector(".result").value;
+
+        if(!home || !away || !result.includes(":")) return;
+
+        let [h, a] = result.split(":").map(Number);
+
+        if(!tableData[home]) tableData[home] = {spiele:0,siege:0,legsPlus:0,legsMinus:0,punkte:0};
+        if(!tableData[away]) tableData[away] = {spiele:0,siege:0,legsPlus:0,legsMinus:0,punkte:0};
+
+        tableData[home].spiele++;
+        tableData[away].spiele++;
+
+        tableData[home].legsPlus += h;
+        tableData[home].legsMinus += a;
+        tableData[away].legsPlus += a;
+        tableData[away].legsMinus += h;
+
+        if(h>a){
+            tableData[home].siege++;
+            tableData[home].punkte+=3;
+        } else {
+            tableData[away].siege++;
+            tableData[away].punkte+=3;
+        }
+    });
+
+    let tbody = document.querySelector("#leagueTable tbody");
+    tbody.innerHTML="";
+
+    Object.keys(tableData)
+    .sort((a,b)=>tableData[b].punkte-tableData[a].punkte)
+    .forEach(team=>{
+        let d = tableData[team];
+        let row = document.createElement("tr");
+        row.innerHTML=`
+            <td>${team}</td>
+            <td>${d.spiele}</td>
+            <td>${d.siege}</td>
+            <td>${d.legsPlus}</td>
+            <td>${d.legsMinus}</td>
+            <td>${d.legsPlus-d.legsMinus}</td>
+            <td>${d.punkte}</td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+reloadMatches();
+calculateTable();
+</script>
+
+</body>
+</html>
