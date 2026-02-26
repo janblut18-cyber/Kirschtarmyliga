@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Admin Bereich</title>
+
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+</head>
+
+<body style="text-align:center; font-family:Arial;">
+
+<h1>Admin Bereich</h1>
+<p>Nur eingeloggte Benutzer sehen das.</p>
+
+<button onclick="logout()">Logout</button>
+
+<script>
+  var firebaseConfig = {
+    apiKey: "DEIN_API_KEY",
+    authDomain: "kirschtarmyliga.firebaseapp.com",
+    projectId: "kirschtarmyliga",
+    appId: "DEINE_APP_ID"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  var auth = firebase.auth();
+
+  auth.onAuthStateChanged(function(user) {
+    if (!user) {
+      window.location.href = "login.html";
+    }
+  });
+
+  function logout() {
+    auth.signOut().then(function() {
+      window.location.href = "index.html";
+    });
+  }
+</script>
+
+</body>
+</html>
