@@ -13,6 +13,7 @@
 <h1 class="text-4xl font-bold text-center mb-8">
 🎯 Kirschtarmy 1.0
 </h1>
+
 <!-- LOGIN -->
 <div class="bg-gray-800 p-4 rounded-xl mb-6 text-center">
 <input id="email" type="email" placeholder="Email"
@@ -119,16 +120,15 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-let currentLiga = "liga1";
-let isAdmin = false;
+let currentLiga="liga1";
+let isAdmin=false;
 
-const loginBtn = document.getElementById("loginBtn");
-const logoutBtn = document.getElementById("logoutBtn");
-const addPlayerBtn = document.getElementById("addPlayerBtn");
-const addMatchBtn = document.getElementById("addMatchBtn");
-const deleteHeader = document.getElementById("deleteHeader");
+const admins = [
+  "janblut18@gmail.com",
+  "jaqueline.zeiser@web.de"
+];
 
-loginBtn.onclick = async () => {
+loginBtn.onclick = async ()=>{
 try{
 await signInWithEmailAndPassword(auth,email.value,password.value);
 loginStatus.innerText="Erfolgreich eingeloggt";
@@ -137,23 +137,21 @@ loginStatus.innerText=e.message;
 }
 };
 
-logoutBtn.onclick = () => signOut(auth);
+logoutBtn.onclick = ()=> signOut(auth);
 
 onAuthStateChanged(auth,(user)=>{
-if(user && [
-  "janblut18@gmail.com",
-  "jaqueline.zeiser@web.de"
-].includes(user.email)){
-  isAdmin = true;
-  addPlayerBtn.classList.remove("hidden");
-  addMatchBtn.classList.remove("hidden");
-  deleteHeader.classList.remove("hidden");
-} else {
-  isAdmin = false;
-  addPlayerBtn.classList.add("hidden");
-  addMatchBtn.classList.add("hidden");
-  deleteHeader.classList.add("hidden");
+if(user && admins.includes(user.email)){
+isAdmin=true;
+addPlayerBtn.classList.remove("hidden");
+addMatchBtn.classList.remove("hidden");
+deleteHeader.classList.remove("hidden");
+}else{
+isAdmin=false;
+addPlayerBtn.classList.add("hidden");
+addMatchBtn.classList.add("hidden");
+deleteHeader.classList.add("hidden");
 }
+});
 
 document.querySelectorAll(".ligaBtn").forEach(btn=>{
 btn.onclick=()=>switchLiga(btn.dataset.liga);
@@ -189,7 +187,6 @@ heimSelect.innerHTML="";
 gastSelect.innerHTML="";
 matchTable.innerHTML="";
 leagueTable.innerHTML="";
-
 let tableData={};
 
 const playersSnap=await getDocs(collection(db,currentLiga+"_players"));
@@ -216,7 +213,6 @@ tableData[p]={spiele:0,siege:0,unentschieden:0,legsPlus:0,legsMinus:0,punkte:0};
 const matchSnap=await getDocs(collection(db,currentLiga+"_matches"));
 matchSnap.forEach(d=>{
 const m=d.data();
-
 let row=document.createElement("tr");
 row.innerHTML=`
 <td>${m.spieltag}</td>
@@ -224,7 +220,6 @@ row.innerHTML=`
 <td>${m.gast}</td>
 <td>${m.result}</td>
 `;
-
 if(isAdmin){
 let del=document.createElement("td");
 let btn=document.createElement("button");
@@ -234,7 +229,6 @@ btn.onclick=async ()=>{ await deleteDoc(doc(db,currentLiga+"_matches",d.id)); lo
 del.appendChild(btn);
 row.appendChild(del);
 }
-
 matchTable.appendChild(row);
 
 if(!m.result.includes(":")) return;
