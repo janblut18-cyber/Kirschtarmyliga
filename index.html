@@ -140,18 +140,20 @@ loginStatus.innerText=e.message;
 logoutBtn.onclick = () => signOut(auth);
 
 onAuthStateChanged(auth,(user)=>{
-if(user && user.email==="janblut18@gmail.com"){
-isAdmin=true;
-addPlayerBtn.classList.remove("hidden");
-addMatchBtn.classList.remove("hidden");
-deleteHeader.classList.remove("hidden");
-}else{
-isAdmin=false;
-addPlayerBtn.classList.add("hidden");
-addMatchBtn.classList.add("hidden");
-deleteHeader.classList.add("hidden");
+if(user && [
+  "janblut18@gmail.com",
+  "jaqueline.zeiser@web.de"
+].includes(user.email)){
+  isAdmin = true;
+  addPlayerBtn.classList.remove("hidden");
+  addMatchBtn.classList.remove("hidden");
+  deleteHeader.classList.remove("hidden");
+} else {
+  isAdmin = false;
+  addPlayerBtn.classList.add("hidden");
+  addMatchBtn.classList.add("hidden");
+  deleteHeader.classList.add("hidden");
 }
-});
 
 document.querySelectorAll(".ligaBtn").forEach(btn=>{
 btn.onclick=()=>switchLiga(btn.dataset.liga);
