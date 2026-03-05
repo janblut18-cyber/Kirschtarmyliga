@@ -234,13 +234,17 @@ matchTable.appendChild(row);
 if(!m.result.includes(":")) return;
 let [h,a]=m.result.split(":").map(Number);
 
+// Sicherstellen dass Spieler existieren
+if(!tableData[m.heim] || !tableData[m.gast]) return;
+
 tableData[m.heim].spiele++;
 tableData[m.gast].spiele++;
+
 tableData[m.heim].legsPlus+=h;
 tableData[m.heim].legsMinus+=a;
+
 tableData[m.gast].legsPlus+=a;
 tableData[m.gast].legsMinus+=h;
-
 if(h>a){tableData[m.heim].siege++;tableData[m.heim].punkte+=3;}
 else if(h<a){tableData[m.gast].siege++;tableData[m.gast].punkte+=3;}
 else{
