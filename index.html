@@ -189,12 +189,68 @@ matchTable.innerHTML="";
 leagueTable.innerHTML="";
 let tableData={};
 
-const playersSnap=await getDocs(collection(db,currentLiga+"_players"));
-playersSnap.forEach(d=>{
-const p=d.data().name;
-let li=document.createElement("li");
-li.className="flex justify-between bg-gray-700 p-2 rounded";
-li.innerHTML=p;
+const playersSnap = await getDocs(collection(db, currentLiga + "_players"));
+const matchesSnap = await getDocs(collection(db, currentLiga + "_matches"));
+
+let tableData = {};
+
+// Spieler initialisieren
+playersSnap.forEach(doc => {
+  const name = doc.data().name;
+
+  tableData[name] = {
+    name: name,
+    sp: 0,
+    s: 0,
+    u: 0,
+    legPlus: 0,
+    legMinus: 0,
+    diff: 0,
+    p: 0
+  };
+});
+
+// Matches auswerten
+matchesSnap.forEach(doc => {
+  const m = doc.data();
+
+  const p1 = tableData[m.player1];
+  const p2 = tableData[m.player2];
+
+  if (!p1 || !p2) return;
+
+  p1.sp++;
+  p2.sp++;
+
+  p1.legPlus += m.score1;
+  p1.legMinus += m.score2;
+
+  p2.legPlus += m.score2;
+  p2.legMinus += m.score1;
+
+  if (m.score1 > m.score2) {
+    p1.s++;
+    p1.p += 3;
+  } else if (m.score2 > m.score1) {
+    p2.s++;
+    p2.p += 3;
+  } else {
+    p1.u++;
+    p2.u++;
+    p1.p++;
+    p2.p++;
+  }
+});
+
+// Differenz berechnen
+Object.values(tableData).forEach(p => {
+  p.diff = p.legPlus - p.legMinus;
+});
+
+// Sortieren
+const table = Object.values(tableData).sort((a, b) =>
+  b.p - a.p || b.diff - a.diff || b.legPlus - a.legPlus
+);
 
 if(isAdmin){
 let btn=document.createElement("button");
