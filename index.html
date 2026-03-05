@@ -14,7 +14,6 @@
 🎯 Kirschtarmy 1.0
 </h1>
 
-<!-- LOGIN -->
 <div class="bg-gray-800 p-4 rounded-xl mb-6 text-center">
 <input id="email" type="email" placeholder="Email"
 class="p-2 text-black rounded mb-2 w-64">
@@ -27,7 +26,6 @@ class="p-2 text-black rounded mb-2 w-64">
 <p id="loginStatus" class="mt-2 text-sm text-red-400"></p>
 </div>
 
-<!-- LIGA BUTTONS -->
 <div class="flex justify-center gap-4 mb-6">
 <button data-liga="liga1" class="ligaBtn bg-blue-600 px-4 py-2 rounded">Liga 1</button>
 <button data-liga="liga2" class="ligaBtn bg-purple-600 px-4 py-2 rounded">Liga 2</button>
@@ -37,7 +35,6 @@ class="p-2 text-black rounded mb-2 w-64">
 
 <h2 id="ligaTitle" class="text-2xl font-bold text-center mb-4"></h2>
 
-<!-- SPIELER -->
 <div class="bg-gray-800 p-6 rounded-xl mb-8">
 <h3 class="text-xl font-bold mb-4">👥 Spieler</h3>
 <ul id="playerList" class="mb-4 space-y-2"></ul>
@@ -46,7 +43,6 @@ class="p-2 text-black rounded mb-2 w-64">
 </button>
 </div>
 
-<!-- SPIEL -->
 <div class="bg-gray-800 p-6 rounded-xl mb-8">
 <h3 class="text-xl font-bold mb-4">🗓 Spiel hinzufügen</h3>
 
@@ -79,7 +75,6 @@ Spiel speichern
 </table>
 </div>
 
-<!-- TABELLE -->
 <div class="bg-gray-800 p-6 rounded-xl">
 <h3 class="text-xl font-bold mb-4">📊 Tabelle</h3>
 <table class="w-full text-center">
@@ -196,7 +191,6 @@ playersSnap.forEach(d=>{
 const p=d.data().name.trim();
 
 playerList.innerHTML+=`<li class="bg-gray-700 p-2 rounded">${p}</li>`;
-
 heimSelect.innerHTML+=`<option>${p}</option>`;
 gastSelect.innerHTML+=`<option>${p}</option>`;
 
@@ -208,7 +202,6 @@ const matchSnap=await getDocs(collection(db,currentLiga+"_matches"));
 matchSnap.forEach(d=>{
 
 const m=d.data();
-
 let heim=m.heim.trim();
 let gast=m.gast.trim();
 
@@ -224,16 +217,7 @@ matchTable.innerHTML+=`
 if(!m.result.includes(":")) return;
 
 let [h,a]=m.result.split(":").map(Number);
-
 if(isNaN(h)||isNaN(a)) return;
-
-if(!tableData[heim]){
-tableData[heim]={spiele:0,siege:0,unentschieden:0,legsPlus:0,legsMinus:0,punkte:0};
-}
-
-if(!tableData[gast]){
-tableData[gast]={spiele:0,siege:0,unentschieden:0,legsPlus:0,legsMinus:0,punkte:0};
-}
 
 tableData[heim].spiele++;
 tableData[gast].spiele++;
@@ -244,14 +228,8 @@ tableData[heim].legsMinus+=a;
 tableData[gast].legsPlus+=a;
 tableData[gast].legsMinus+=h;
 
-if(h>a){
-tableData[heim].siege++;
-tableData[heim].punkte+=3;
-}
-else if(h<a){
-tableData[gast].siege++;
-tableData[gast].punkte+=3;
-}
+if(h>a){tableData[heim].siege++;tableData[heim].punkte+=3;}
+else if(h<a){tableData[gast].siege++;tableData[gast].punkte+=3;}
 else{
 tableData[heim].unentschieden++;
 tableData[gast].unentschieden++;
@@ -262,20 +240,42 @@ tableData[gast].punkte+=1;
 });
 
 let teams=Object.keys(tableData).sort((a,b)=>{
-
 if(tableData[b].punkte!==tableData[a].punkte)
 return tableData[b].punkte-tableData[a].punkte;
-
 return (tableData[b].legsPlus-tableData[b].legsMinus)-
 (tableData[a].legsPlus-tableData[a].legsMinus);
-
 });
 
-teams.forEach(team=>{
+let liga=parseInt(currentLiga.replace("liga",""));
+let last=teams.length-1;
+let secondLast=teams.length-2;
+
+teams.forEach((team,index)=>{
+
 let d=tableData[team];
+let rowClass="";
+
+if(liga===1){
+if(index===secondLast) rowClass="bg-yellow-500 text-black";
+if(index===last) rowClass="bg-red-600";
+}
+if(liga===2){
+if(index===0) rowClass="bg-green-600";
+if(index===secondLast) rowClass="bg-yellow-500 text-black";
+if(index===last) rowClass="bg-red-600";
+}
+if(liga===3){
+if(index===0) rowClass="bg-green-600";
+if(index===secondLast) rowClass="bg-yellow-500 text-black";
+if(index===last) rowClass="bg-red-600";
+}
+if(liga===4){
+if(index===0) rowClass="bg-green-600";
+if(index===1) rowClass="bg-yellow-500 text-black";
+}
 
 leagueTable.innerHTML+=`
-<tr>
+<tr class="${rowClass}">
 <td>${team}</td>
 <td>${d.spiele}</td>
 <td>${d.siege}</td>
@@ -284,8 +284,7 @@ leagueTable.innerHTML+=`
 <td>${d.legsMinus}</td>
 <td>${d.legsPlus-d.legsMinus}</td>
 <td>${d.punkte}</td>
-</tr>
-`;
+</tr>`;
 });
 
 }
