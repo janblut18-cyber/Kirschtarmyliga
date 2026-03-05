@@ -5,13 +5,35 @@
 <title>Kirschtarmy Liga</title>
 
 <style>
+
 body{
 font-family:Arial;
-max-width:900px;
+background:#1e1e1e;
+color:white;
+max-width:1000px;
 margin:auto;
 }
 
+h1{
+text-align:center;
+}
+
 button{
+padding:8px 12px;
+margin:4px;
+border:none;
+background:#ff4d4d;
+color:white;
+cursor:pointer;
+border-radius:4px;
+}
+
+button:hover{
+background:#ff2a2a;
+}
+
+select,input{
+padding:6px;
 margin:4px;
 }
 
@@ -19,13 +41,27 @@ table{
 width:100%;
 border-collapse:collapse;
 margin-top:10px;
+background:#2b2b2b;
+}
+
+th{
+background:#ff4d4d;
 }
 
 th,td{
-border:1px solid #ccc;
 padding:6px;
+border:1px solid #444;
 text-align:center;
 }
+
+tr:nth-child(even){
+background:#333;
+}
+
+tr:nth-child(odd){
+background:#262626;
+}
+
 </style>
 
 </head>
@@ -33,17 +69,22 @@ text-align:center;
 
 <h1>Kirschtarmy Liga</h1>
 
+<div style="text-align:center">
+
 <button onclick="setLiga('liga1')">Liga 1</button>
 <button onclick="setLiga('liga2')">Liga 2</button>
 <button onclick="setLiga('liga3')">Liga 3</button>
 <button onclick="setLiga('liga4')">Liga 4</button>
 
+</div>
+
 <hr>
 
-<h3>Spieler</h3>
+<h2>Spieler</h2>
+
 <button onclick="addPlayer()">➕ Spieler hinzufügen</button>
 
-<h3>Spiel hinzufügen</h3>
+<h2>Spiel hinzufügen</h2>
 
 <select id="player1"></select>
 <select id="player2"></select>
@@ -55,27 +96,33 @@ text-align:center;
 
 <hr>
 
-<h3>Spielplan</h3>
+<h2>Spielplan</h2>
 
 <table>
+
 <thead>
+
 <tr>
 <th>#</th>
 <th>Heim</th>
 <th>Gast</th>
 <th>Ergebnis</th>
 </tr>
+
 </thead>
 
 <tbody id="matchesBody"></tbody>
+
 </table>
 
 <hr>
 
-<h3>Tabelle</h3>
+<h2>Tabelle</h2>
 
 <table>
+
 <thead>
+
 <tr>
 <th>#</th>
 <th>Team</th>
@@ -87,9 +134,11 @@ text-align:center;
 <th>Diff</th>
 <th>P</th>
 </tr>
+
 </thead>
 
 <tbody id="tableBody"></tbody>
+
 </table>
 
 
@@ -98,11 +147,14 @@ text-align:center;
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getFirestore,collection,getDocs,addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+
 const firebaseConfig = {
+
 apiKey:"DEINE_API_KEY",
 authDomain:"DEIN_AUTH_DOMAIN",
 projectId:"DEIN_PROJECT_ID",
 appId:"DEINE_APP_ID"
+
 };
 
 const app = initializeApp(firebaseConfig);
@@ -112,8 +164,10 @@ let currentLiga="liga1";
 
 
 window.setLiga=function(liga){
+
 currentLiga=liga;
 loadData();
+
 }
 
 
@@ -124,10 +178,13 @@ const name=prompt("Spielername");
 if(!name) return;
 
 await addDoc(collection(db,currentLiga+"_players"),{
+
 name:name
+
 });
 
 loadData();
+
 }
 
 
@@ -142,13 +199,16 @@ const s2=parseInt(document.getElementById("score2").value);
 if(!p1||!p2) return;
 
 await addDoc(collection(db,currentLiga+"_matches"),{
+
 player1:p1,
 player2:p2,
 score1:s1,
 score2:s2
+
 });
 
 loadData();
+
 }
 
 
@@ -168,6 +228,7 @@ const name=doc.data().name;
 players.push(name);
 
 tableData[name]={
+
 name:name,
 sp:0,
 s:0,
@@ -176,6 +237,7 @@ legPlus:0,
 legMinus:0,
 diff:0,
 p:0
+
 };
 
 });
@@ -188,8 +250,10 @@ p1sel.innerHTML="";
 p2sel.innerHTML="";
 
 players.forEach(p=>{
+
 p1sel.innerHTML+=`<option>${p}</option>`;
 p2sel.innerHTML+=`<option>${p}</option>`;
+
 });
 
 
@@ -198,23 +262,29 @@ matchesBody.innerHTML="";
 
 let spieltag=1;
 
+
 matchesSnap.forEach(doc=>{
 
 const m=doc.data();
 
 matchesBody.innerHTML+=`
+
 <tr>
+
 <td>${spieltag++}</td>
 <td>${m.player1}</td>
 <td>${m.player2}</td>
 <td>${m.score1}:${m.score2}</td>
+
 </tr>
+
 `;
 
 const p1=tableData[m.player1];
 const p2=tableData[m.player2];
 
 if(!p1||!p2) return;
+
 
 p1.sp++;
 p2.sp++;
@@ -225,18 +295,21 @@ p1.legMinus+=m.score2;
 p2.legPlus+=m.score2;
 p2.legMinus+=m.score1;
 
+
 if(m.score1>m.score2){
 
 p1.s++;
 p1.p+=3;
 
 }
+
 else if(m.score2>m.score1){
 
 p2.s++;
 p2.p+=3;
 
 }
+
 else{
 
 p1.u++;
@@ -251,12 +324,16 @@ p2.p++;
 
 
 Object.values(tableData).forEach(p=>{
+
 p.diff=p.legPlus-p.legMinus;
+
 });
 
 
 const table=Object.values(tableData).sort((a,b)=>
+
 b.p-a.p || b.diff-a.diff || b.legPlus-a.legPlus
+
 );
 
 
@@ -267,7 +344,9 @@ tableBody.innerHTML="";
 table.forEach((p,i)=>{
 
 tableBody.innerHTML+=`
+
 <tr>
+
 <td>${i+1}</td>
 <td>${p.name}</td>
 <td>${p.sp}</td>
@@ -277,13 +356,15 @@ tableBody.innerHTML+=`
 <td>${p.legMinus}</td>
 <td>${p.diff}</td>
 <td>${p.p}</td>
+
 </tr>
+
 `;
 
 });
 
-
 }
+
 
 loadData();
 
