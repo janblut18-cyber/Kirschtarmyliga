@@ -2,78 +2,78 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<title>Kirschtarmy Liga</title>
+<title>Kirschtarmy 1.0</title>
 
 <style>
 body{
 font-family:Arial;
 max-width:900px;
 margin:auto;
-background:#f5f5f5;
 }
 
 button{
-margin:4px;
-padding:6px 10px;
-cursor:pointer;
+margin:3px;
 }
 
 table{
 width:100%;
 border-collapse:collapse;
-background:white;
+margin-top:10px;
 }
 
 th,td{
 border:1px solid #ccc;
-padding:6px;
+padding:5px;
 text-align:center;
-}
-
-h1,h2{
-margin-top:20px;
 }
 </style>
 </head>
 
 <body>
 
-<h1>Kirschtarmy Liga</h1>
+<h1>Kirschtarmy 1.0</h1>
+
+<button>Login</button>
+<button>Logout</button>
+
+<br><br>
 
 <button onclick="setLiga('liga1')">Liga 1</button>
 <button onclick="setLiga('liga2')">Liga 2</button>
 <button onclick="setLiga('liga3')">Liga 3</button>
 <button onclick="setLiga('liga4')">Liga 4</button>
 
-<h2>Spieler</h2>
+<hr>
+
+<h3>Spieler</h3>
 <button onclick="addPlayer()">➕ Spieler hinzufügen</button>
 
-<h2>Spiel hinzufügen</h2>
+<h3>Spiel hinzufügen</h3>
 
 <select id="player1"></select>
 <select id="player2"></select>
 
-<input id="score1" type="number" placeholder="Legs Heim">
-<input id="score2" type="number" placeholder="Legs Gast">
+<input id="score1" type="number" placeholder="Leg Heim">
+<input id="score2" type="number" placeholder="Leg Gast">
 
 <button onclick="addMatch()">Spiel speichern</button>
 
 <hr>
 
-<h2>Spielplan</h2>
-
 <table>
 <thead>
 <tr>
+<th>Spieltag</th>
 <th>Heim</th>
 <th>Gast</th>
 <th>Ergebnis</th>
 </tr>
 </thead>
+
 <tbody id="matchesBody"></tbody>
 </table>
 
-<h2>Tabelle</h2>
+<h3>Tabelle</h3>
 
 <table>
 <thead>
@@ -99,12 +99,10 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebas
 import { getFirestore,collection,getDocs,addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
-apiKey: "APIKEY",
-authDomain: "AUTHDOMAIN",
-projectId: "PROJECTID",
-storageBucket: "BUCKET",
-messagingSenderId: "SENDERID",
-appId: "APPID"
+apiKey:"APIKEY",
+authDomain:"AUTHDOMAIN",
+projectId:"PROJECTID",
+appId:"APPID"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -138,7 +136,7 @@ const p2=document.getElementById("player2").value;
 const s1=parseInt(document.getElementById("score1").value);
 const s2=parseInt(document.getElementById("score2").value);
 
-if(!p1||!p2) return;
+if(!p1 || !p2) return;
 
 await addDoc(collection(db,currentLiga+"_matches"),{
 player1:p1,
@@ -155,10 +153,11 @@ async function loadData(){
 const playersSnap = await getDocs(collection(db,currentLiga+"_players"));
 const matchesSnap = await getDocs(collection(db,currentLiga+"_matches"));
 
-let players=[];
 let tableData={};
+let players=[];
 
 playersSnap.forEach(doc=>{
+
 const name=doc.data().name;
 
 players.push(name);
@@ -173,6 +172,7 @@ legMinus:0,
 diff:0,
 p:0
 };
+
 });
 
 const p1sel=document.getElementById("player1");
@@ -189,12 +189,15 @@ p2sel.innerHTML+=`<option>${p}</option>`;
 const matchesBody=document.getElementById("matchesBody");
 matchesBody.innerHTML="";
 
+let spieltag=1;
+
 matchesSnap.forEach(doc=>{
 
 const m=doc.data();
 
 matchesBody.innerHTML+=`
 <tr>
+<td>${spieltag++}</td>
 <td>${m.player1}</td>
 <td>${m.player2}</td>
 <td>${m.score1}:${m.score2}</td>
