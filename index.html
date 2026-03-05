@@ -14,6 +14,7 @@
 🎯 Kirschtarmy 1.0
 </h1>
 
+<!-- LOGIN -->
 <div class="bg-gray-800 p-4 rounded-xl mb-6 text-center">
 <input id="email" type="email" placeholder="Email"
 class="p-2 text-black rounded mb-2 w-64">
@@ -26,6 +27,7 @@ class="p-2 text-black rounded mb-2 w-64">
 <p id="loginStatus" class="mt-2 text-sm text-red-400"></p>
 </div>
 
+<!-- LIGA BUTTONS -->
 <div class="flex justify-center gap-4 mb-6">
 <button data-liga="liga1" class="ligaBtn bg-blue-600 px-4 py-2 rounded">Liga 1</button>
 <button data-liga="liga2" class="ligaBtn bg-purple-600 px-4 py-2 rounded">Liga 2</button>
@@ -35,14 +37,18 @@ class="p-2 text-black rounded mb-2 w-64">
 
 <h2 id="ligaTitle" class="text-2xl font-bold text-center mb-4"></h2>
 
+<!-- SPIELER -->
 <div class="bg-gray-800 p-6 rounded-xl mb-8">
 <h3 class="text-xl font-bold mb-4">👥 Spieler</h3>
 <ul id="playerList" class="mb-4 space-y-2"></ul>
-<button id="addPlayerBtn" class="bg-green-600 px-4 py-2 rounded hidden">
+
+<button id="addPlayerBtn"
+class="bg-green-600 px-4 py-2 rounded hidden">
 ➕ Spieler hinzufügen
 </button>
 </div>
 
+<!-- SPIEL -->
 <div class="bg-gray-800 p-6 rounded-xl mb-8">
 <h3 class="text-xl font-bold mb-4">🗓 Spiel hinzufügen</h3>
 
@@ -55,7 +61,8 @@ class="text-black p-2 rounded">
 class="text-black p-2 rounded">
 </div>
 
-<button id="addMatchBtn" class="bg-blue-600 px-4 py-2 rounded hidden">
+<button id="addMatchBtn"
+class="bg-blue-600 px-4 py-2 rounded hidden">
 Spiel speichern
 </button>
 
@@ -73,10 +80,18 @@ Spiel speichern
 </thead>
 <tbody id="matchTable"></tbody>
 </table>
+
 </div>
 
+<!-- TABELLE -->
 <div class="bg-gray-800 p-6 rounded-xl">
 <h3 class="text-xl font-bold mb-4">📊 Tabelle</h3>
+
+<button id="seasonBtn"
+class="bg-orange-600 px-4 py-2 rounded mb-4 hidden">
+🏆 Saison beenden
+</button>
+
 <table class="w-full text-center">
 <thead class="bg-gray-700">
 <tr>
@@ -117,6 +132,7 @@ const db = getFirestore(app);
 
 let currentLiga="liga1";
 let isAdmin=false;
+let tableData={};
 
 const admins=[
 "janblut18@gmail.com",
@@ -140,11 +156,13 @@ isAdmin=true;
 addPlayerBtn.classList.remove("hidden");
 addMatchBtn.classList.remove("hidden");
 deleteHeader.classList.remove("hidden");
+seasonBtn.classList.remove("hidden");
 }else{
 isAdmin=false;
 addPlayerBtn.classList.add("hidden");
 addMatchBtn.classList.add("hidden");
 deleteHeader.classList.add("hidden");
+seasonBtn.classList.add("hidden");
 }
 });
 
@@ -183,7 +201,7 @@ gastSelect.innerHTML="";
 matchTable.innerHTML="";
 leagueTable.innerHTML="";
 
-let tableData={};
+tableData={};
 
 const playersSnap=await getDocs(collection(db,currentLiga+"_players"));
 
@@ -191,6 +209,7 @@ playersSnap.forEach(d=>{
 const p=d.data().name.trim();
 
 playerList.innerHTML+=`<li class="bg-gray-700 p-2 rounded">${p}</li>`;
+
 heimSelect.innerHTML+=`<option>${p}</option>`;
 gastSelect.innerHTML+=`<option>${p}</option>`;
 
@@ -242,6 +261,7 @@ tableData[gast].punkte+=1;
 let teams=Object.keys(tableData).sort((a,b)=>{
 if(tableData[b].punkte!==tableData[a].punkte)
 return tableData[b].punkte-tableData[a].punkte;
+
 return (tableData[b].legsPlus-tableData[b].legsMinus)-
 (tableData[a].legsPlus-tableData[a].legsMinus);
 });
@@ -288,6 +308,41 @@ leagueTable.innerHTML+=`
 });
 
 }
+
+seasonBtn.onclick=async()=>{
+
+if(!confirm("Saison wirklich beenden?")) return;
+
+let teams=Object.keys(tableData).sort((a,b)=>tableData[b].punkte-tableData[a].punkte);
+
+let liga=parseInt(currentLiga.replace("liga",""));
+
+let aufsteiger=[];
+let absteiger=[];
+
+if(liga===1){
+absteiger=[teams[teams.length-1]];
+}
+
+if(liga===2 || liga===3){
+aufsteiger=[teams[0]];
+absteiger=[teams[teams.length-1]];
+}
+
+if(liga===4){
+aufsteiger=[teams[0]];
+}
+
+for(const p of aufsteiger){
+await addDoc(collection(db,"liga"+(liga-1)+"_players"),{name:p});
+}
+
+for(const p of absteiger){
+await addDoc(collection(db,"liga"+(liga+1)+"_players"),{name:p});
+}
+
+alert("Saison abgeschlossen");
+};
 
 switchLiga("liga1");
 
