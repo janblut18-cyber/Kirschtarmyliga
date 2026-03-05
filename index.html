@@ -2,89 +2,83 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Kirschtarmy 1.0</title>
-<script src="https://cdn.tailwindcss.com"></script>
+<title>Kirschtarmy Liga</title>
+
+<style>
+body{
+font-family:Arial;
+max-width:900px;
+margin:auto;
+background:#f5f5f5;
+}
+
+button{
+margin:4px;
+padding:6px 10px;
+cursor:pointer;
+}
+
+table{
+width:100%;
+border-collapse:collapse;
+background:white;
+}
+
+th,td{
+border:1px solid #ccc;
+padding:6px;
+text-align:center;
+}
+
+h1,h2{
+margin-top:20px;
+}
+</style>
 </head>
 
-<body class="bg-gray-900 text-white min-h-screen">
-<div class="max-w-6xl mx-auto p-6">
+<body>
 
-<h1 class="text-4xl font-bold text-center mb-8">
-🎯 Kirschtarmy 1.0
-</h1>
+<h1>Kirschtarmy Liga</h1>
 
-<!-- LOGIN -->
-<div class="bg-gray-800 p-4 rounded-xl mb-6 text-center">
-<input id="email" type="email" placeholder="Email"
-class="p-2 text-black rounded mb-2 w-64">
-<input id="password" type="password" placeholder="Passwort"
-class="p-2 text-black rounded mb-2 w-64">
-<div>
-<button id="loginBtn" class="bg-green-600 px-4 py-2 rounded">Login</button>
-<button id="logoutBtn" class="bg-red-600 px-4 py-2 rounded">Logout</button>
-</div>
-<p id="loginStatus" class="mt-2 text-sm text-red-400"></p>
-</div>
+<button onclick="setLiga('liga1')">Liga 1</button>
+<button onclick="setLiga('liga2')">Liga 2</button>
+<button onclick="setLiga('liga3')">Liga 3</button>
+<button onclick="setLiga('liga4')">Liga 4</button>
 
-<!-- LIGA BUTTONS -->
-<div class="flex justify-center gap-4 mb-6">
-<button data-liga="liga1" class="ligaBtn bg-blue-600 px-4 py-2 rounded">Liga 1</button>
-<button data-liga="liga2" class="ligaBtn bg-purple-600 px-4 py-2 rounded">Liga 2</button>
-<button data-liga="liga3" class="ligaBtn bg-green-600 px-4 py-2 rounded">Liga 3</button>
-<button data-liga="liga4" class="ligaBtn bg-red-600 px-4 py-2 rounded">Liga 4</button>
-</div>
+<h2>Spieler</h2>
+<button onclick="addPlayer()">➕ Spieler hinzufügen</button>
 
-<h2 id="ligaTitle" class="text-2xl font-bold text-center mb-4"></h2>
+<h2>Spiel hinzufügen</h2>
 
-<!-- SPIELER -->
-<div class="bg-gray-800 p-6 rounded-xl mb-8">
-<h3 class="text-xl font-bold mb-4">👥 Spieler</h3>
-<ul id="playerList" class="mb-4 space-y-2"></ul>
-<button id="addPlayerBtn" class="bg-green-600 px-4 py-2 rounded hidden">
-➕ Spieler hinzufügen
-</button>
-</div>
+<select id="player1"></select>
+<select id="player2"></select>
 
-<!-- SPIEL -->
-<div class="bg-gray-800 p-6 rounded-xl mb-8">
-<h3 class="text-xl font-bold mb-4">🗓 Spiel hinzufügen</h3>
+<input id="score1" type="number" placeholder="Legs Heim">
+<input id="score2" type="number" placeholder="Legs Gast">
 
-<div class="grid grid-cols-2 gap-4 mb-4">
-<select id="heimSelect" class="text-black p-2 rounded"></select>
-<select id="gastSelect" class="text-black p-2 rounded"></select>
-<input id="spieltagInput" type="number" placeholder="Spieltag"
-class="text-black p-2 rounded">
-<input id="resultInput" placeholder="Ergebnis 6:4"
-class="text-black p-2 rounded">
-</div>
+<button onclick="addMatch()">Spiel speichern</button>
 
-<button id="addMatchBtn" class="bg-blue-600 px-4 py-2 rounded hidden">
-Spiel speichern
-</button>
+<hr>
 
-<hr class="my-6 border-gray-600">
+<h2>Spielplan</h2>
 
-<table class="w-full text-center">
-<thead class="bg-gray-700">
+<table>
+<thead>
 <tr>
-<th>Spieltag</th>
 <th>Heim</th>
 <th>Gast</th>
 <th>Ergebnis</th>
-<th id="deleteHeader" class="hidden">❌</th>
 </tr>
 </thead>
-<tbody id="matchTable"></tbody>
+<tbody id="matchesBody"></tbody>
 </table>
-</div>
 
-<!-- TABELLE -->
-<div class="bg-gray-800 p-6 rounded-xl">
-<h3 class="text-xl font-bold mb-4">📊 Tabelle</h3>
-<table class="w-full text-center">
-<thead class="bg-gray-700">
+<h2>Tabelle</h2>
+
+<table>
+<thead>
 <tr>
+<th>#</th>
 <th>Team</th>
 <th>Sp</th>
 <th>S</th>
@@ -95,268 +89,183 @@ Spiel speichern
 <th>P</th>
 </tr>
 </thead>
-<tbody id="leagueTable"></tbody>
-</table>
-</div>
 
-</div>
+<tbody id="tableBody"></tbody>
+</table>
 
 <script type="module">
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getFirestore,collection,getDocs,addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyDb87wTtntcY4VQ9WjekaA3CLYwW2bNrmQ",
-  authDomain: "kirschtarmyliga.firebaseapp.com",
-  projectId: "kirschtarmyliga",
-  storageBucket: "kirschtarmyliga.firebasestorage.app",
-  messagingSenderId: "661130390257",
-  appId: "1:661130390257:web:469047a1dec589eb321750"
+apiKey: "APIKEY",
+authDomain: "AUTHDOMAIN",
+projectId: "PROJECTID",
+storageBucket: "BUCKET",
+messagingSenderId: "SENDERID",
+appId: "APPID"
 };
 
 const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
 const db = getFirestore(app);
 
 let currentLiga="liga1";
-let isAdmin=false;
 
-const admins = [
-  "janblut18@gmail.com",
-  "jaqueline.zeiser@web.de"
-];
-
-loginBtn.onclick = async ()=>{
-try{
-await signInWithEmailAndPassword(auth,email.value,password.value);
-loginStatus.innerText="Erfolgreich eingeloggt";
-}catch(e){
-loginStatus.innerText=e.message;
-}
-};
-
-logoutBtn.onclick = ()=> signOut(auth);
-
-onAuthStateChanged(auth,(user)=>{
-if(user && admins.includes(user.email)){
-isAdmin=true;
-addPlayerBtn.classList.remove("hidden");
-addMatchBtn.classList.remove("hidden");
-deleteHeader.classList.remove("hidden");
-}else{
-isAdmin=false;
-addPlayerBtn.classList.add("hidden");
-addMatchBtn.classList.add("hidden");
-deleteHeader.classList.add("hidden");
-}
-});
-
-document.querySelectorAll(".ligaBtn").forEach(btn=>{
-btn.onclick=()=>switchLiga(btn.dataset.liga);
-});
-
-addPlayerBtn.onclick = async ()=>{
-const name=prompt("Spielername:");
-if(!name) return;
-await addDoc(collection(db,currentLiga+"_players"),{name});
-loadData();
-};
-
-addMatchBtn.onclick = async ()=>{
-await addDoc(collection(db,currentLiga+"_matches"),{
-spieltag:spieltagInput.value,
-heim:heimSelect.value,
-gast:gastSelect.value,
-result:resultInput.value
-});
-loadData();
-};
-
-async function switchLiga(liga){
+window.setLiga = function(liga){
 currentLiga=liga;
-ligaTitle.innerText="Liga "+liga.replace("liga","");
+loadData();
+}
+
+window.addPlayer = async function(){
+
+const name = prompt("Spielername");
+
+if(!name) return;
+
+await addDoc(collection(db,currentLiga+"_players"),{
+name:name
+});
+
+loadData();
+}
+
+window.addMatch = async function(){
+
+const p1=document.getElementById("player1").value;
+const p2=document.getElementById("player2").value;
+
+const s1=parseInt(document.getElementById("score1").value);
+const s2=parseInt(document.getElementById("score2").value);
+
+if(!p1||!p2) return;
+
+await addDoc(collection(db,currentLiga+"_matches"),{
+player1:p1,
+player2:p2,
+score1:s1,
+score2:s2
+});
+
 loadData();
 }
 
 async function loadData(){
 
-playerList.innerHTML="";
-heimSelect.innerHTML="";
-gastSelect.innerHTML="";
-matchTable.innerHTML="";
-leagueTable.innerHTML="";
+const playersSnap = await getDocs(collection(db,currentLiga+"_players"));
+const matchesSnap = await getDocs(collection(db,currentLiga+"_matches"));
+
+let players=[];
 let tableData={};
 
-const playersSnap = await getDocs(collection(db, currentLiga + "_players"));
-const matchesSnap = await getDocs(collection(db, currentLiga + "_matches"));
+playersSnap.forEach(doc=>{
+const name=doc.data().name;
 
-let tableData = {};
+players.push(name);
 
-// Spieler initialisieren
-playersSnap.forEach(doc => {
-  const name = doc.data().name;
-
-  tableData[name] = {
-    name: name,
-    sp: 0,
-    s: 0,
-    u: 0,
-    legPlus: 0,
-    legMinus: 0,
-    diff: 0,
-    p: 0
-  };
+tableData[name]={
+name:name,
+sp:0,
+s:0,
+u:0,
+legPlus:0,
+legMinus:0,
+diff:0,
+p:0
+};
 });
 
-// Matches auswerten
-matchesSnap.forEach(doc => {
-  const m = doc.data();
+const p1sel=document.getElementById("player1");
+const p2sel=document.getElementById("player2");
 
-  const p1 = tableData[m.player1];
-  const p2 = tableData[m.player2];
+p1sel.innerHTML="";
+p2sel.innerHTML="";
 
-  if (!p1 || !p2) return;
-
-  p1.sp++;
-  p2.sp++;
-
-  p1.legPlus += m.score1;
-  p1.legMinus += m.score2;
-
-  p2.legPlus += m.score2;
-  p2.legMinus += m.score1;
-
-  if (m.score1 > m.score2) {
-    p1.s++;
-    p1.p += 3;
-  } else if (m.score2 > m.score1) {
-    p2.s++;
-    p2.p += 3;
-  } else {
-    p1.u++;
-    p2.u++;
-    p1.p++;
-    p2.p++;
-  }
+players.forEach(p=>{
+p1sel.innerHTML+=`<option>${p}</option>`;
+p2sel.innerHTML+=`<option>${p}</option>`;
 });
 
-// Differenz berechnen
-Object.values(tableData).forEach(p => {
-  p.diff = p.legPlus - p.legMinus;
+const matchesBody=document.getElementById("matchesBody");
+matchesBody.innerHTML="";
+
+matchesSnap.forEach(doc=>{
+
+const m=doc.data();
+
+matchesBody.innerHTML+=`
+<tr>
+<td>${m.player1}</td>
+<td>${m.player2}</td>
+<td>${m.score1}:${m.score2}</td>
+</tr>
+`;
+
+const p1=tableData[m.player1];
+const p2=tableData[m.player2];
+
+if(!p1||!p2) return;
+
+p1.sp++;
+p2.sp++;
+
+p1.legPlus+=m.score1;
+p1.legMinus+=m.score2;
+
+p2.legPlus+=m.score2;
+p2.legMinus+=m.score1;
+
+if(m.score1>m.score2){
+p1.s++;
+p1.p+=3;
+}
+else if(m.score2>m.score1){
+p2.s++;
+p2.p+=3;
+}
+else{
+p1.u++;
+p2.u++;
+p1.p++;
+p2.p++;
+}
+
 });
 
-// Sortieren
-const table = Object.values(tableData).sort((a, b) =>
-  b.p - a.p || b.diff - a.diff || b.legPlus - a.legPlus
+Object.values(tableData).forEach(p=>{
+p.diff=p.legPlus-p.legMinus;
+});
+
+const table=Object.values(tableData).sort((a,b)=>
+b.p-a.p || b.diff-a.diff || b.legPlus-a.legPlus
 );
 
-if(isAdmin){
-let btn=document.createElement("button");
-btn.innerText="X";
-btn.className="text-red-400";
-btn.onclick=async ()=>{ await deleteDoc(doc(db,currentLiga+"_players",d.id)); loadData(); };
-li.appendChild(btn);
-}
+const tableBody=document.getElementById("tableBody");
+tableBody.innerHTML="";
 
-playerList.appendChild(li);
-heimSelect.innerHTML+=`<option>${p}</option>`;
-gastSelect.innerHTML+=`<option>${p}</option>`;
-tableData[p]={spiele:0,siege:0,unentschieden:0,legsPlus:0,legsMinus:0,punkte:0};
-});
+table.forEach((p,i)=>{
 
-const matchSnap=await getDocs(collection(db,currentLiga+"_matches"));
-matchSnap.forEach(d=>{
-const m=d.data();
-let row=document.createElement("tr");
-row.innerHTML=`
-<td>${m.spieltag}</td>
-<td>${m.heim}</td>
-<td>${m.gast}</td>
-<td>${m.result}</td>
+tableBody.innerHTML+=`
+<tr>
+<td>${i+1}</td>
+<td>${p.name}</td>
+<td>${p.sp}</td>
+<td>${p.s}</td>
+<td>${p.u}</td>
+<td>${p.legPlus}</td>
+<td>${p.legMinus}</td>
+<td>${p.diff}</td>
+<td>${p.p}</td>
+</tr>
 `;
-if(isAdmin){
-let del=document.createElement("td");
-let btn=document.createElement("button");
-btn.innerText="X";
-btn.className="text-red-400";
-btn.onclick=async ()=>{ await deleteDoc(doc(db,currentLiga+"_matches",d.id)); loadData(); };
-del.appendChild(btn);
-row.appendChild(del);
-}
-matchTable.appendChild(row);
 
-if(!m.result.includes(":")) return;
-let [h,a]=m.result.split(":").map(Number);
-
-tableData[m.heim].spiele++;
-tableData[m.gast].spiele++;
-tableData[m.heim].legsPlus+=h;
-tableData[m.heim].legsMinus+=a;
-tableData[m.gast].legsPlus+=a;
-tableData[m.gast].legsMinus+=h;
-
-if(h>a){tableData[m.heim].siege++;tableData[m.heim].punkte+=3;}
-else if(h<a){tableData[m.gast].siege++;tableData[m.gast].punkte+=3;}
-else{
-tableData[m.heim].unentschieden++;
-tableData[m.gast].unentschieden++;
-tableData[m.heim].punkte+=1;
-tableData[m.gast].punkte+=1;
-}
 });
 
-let teams=Object.keys(tableData).sort((a,b)=>{
-if(tableData[b].punkte!==tableData[a].punkte)
-return tableData[b].punkte-tableData[a].punkte;
-return (tableData[b].legsPlus-tableData[b].legsMinus)-
-(tableData[a].legsPlus-tableData[a].legsMinus);
-});
-
-let liga=parseInt(currentLiga.replace("liga",""));
-let last=teams.length-1;
-let secondLast=teams.length-2;
-
-teams.forEach((team,index)=>{
-let d=tableData[team];
-let rowClass="";
-
-if(liga===1){
-if(index===secondLast) rowClass="bg-yellow-500 text-black";
-if(index===last) rowClass="bg-red-600";
-}
-if(liga===2){
-if(index===0) rowClass="bg-green-600";
-if(index===secondLast) rowClass="bg-yellow-500 text-black";
-if(index===last) rowClass="bg-red-600";
-}
-if(liga===3){
-if(index===0) rowClass="bg-green-600";
-if(index===secondLast) rowClass="bg-yellow-500 text-black";
-if(index===last) rowClass="bg-red-600";
-}
-if(liga===4){
-if(index===0) rowClass="bg-green-600";
-if(index===1) rowClass="bg-yellow-500 text-black";
 }
 
-leagueTable.innerHTML+=`
-<tr class="${rowClass}">
-<td>${team}</td>
-<td>${d.spiele}</td>
-<td>${d.siege}</td>
-<td>${d.unentschieden}</td>
-<td>${d.legsPlus}</td>
-<td>${d.legsMinus}</td>
-<td>${d.legsPlus-d.legsMinus}</td>
-<td>${d.punkte}</td>
-</tr>`;
-});
-}
-
-switchLiga("liga1");
+loadData();
 
 </script>
+
 </body>
 </html>
