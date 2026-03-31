@@ -10,12 +10,16 @@
 <body class="bg-gray-900 text-white min-h-screen">
 <div class="max-w-6xl mx-auto p-6">
 
-<h1 class="text-4xl font-bold text-center mb-8">🎯 Kirschtarmy 1.0</h1>
+<h1 class="text-4xl font-bold text-center mb-8">
+🎯 Kirschtarmy 1.0
+</h1>
 
 <!-- LOGIN -->
 <div class="bg-gray-800 p-4 rounded-xl mb-6 text-center">
-<input id="email" type="email" placeholder="Email" class="p-2 text-black rounded mb-2 w-64">
-<input id="password" type="password" placeholder="Passwort" class="p-2 text-black rounded mb-2 w-64">
+<input id="email" type="email" placeholder="Email"
+class="p-2 text-black rounded mb-2 w-64">
+<input id="password" type="password" placeholder="Passwort"
+class="p-2 text-black rounded mb-2 w-64">
 <div>
 <button id="loginBtn" class="bg-green-600 px-4 py-2 rounded">Login</button>
 <button id="logoutBtn" class="bg-red-600 px-4 py-2 rounded">Logout</button>
@@ -38,7 +42,8 @@
 <h3 class="text-xl font-bold mb-4">👥 Spieler</h3>
 <ul id="playerList" class="mb-4 space-y-2"></ul>
 
-<button id="addPlayerBtn" class="bg-green-600 px-4 py-2 rounded hidden">
+<button id="addPlayerBtn"
+class="bg-green-600 px-4 py-2 rounded hidden">
 ➕ Spieler hinzufügen
 </button>
 </div>
@@ -50,17 +55,19 @@
 <div class="grid grid-cols-2 gap-4 mb-4">
 <select id="heimSelect" class="text-black p-2 rounded"></select>
 <select id="gastSelect" class="text-black p-2 rounded"></select>
-<input id="spieltagInput" type="number" placeholder="Spieltag" class="text-black p-2 rounded">
-<input id="resultInput" placeholder="Ergebnis 6:4" class="text-black p-2 rounded">
+<input id="spieltagInput" type="number" placeholder="Spieltag"
+class="text-black p-2 rounded">
+<input id="resultInput" placeholder="Ergebnis 6:4"
+class="text-black p-2 rounded">
 </div>
 
-<button id="addMatchBtn" class="bg-blue-600 px-4 py-2 rounded hidden">
+<button id="addMatchBtn"
+class="bg-blue-600 px-4 py-2 rounded hidden">
 Spiel speichern
 </button>
 
 <hr class="my-6 border-gray-600">
 
-<div class="overflow-x-auto">
 <table class="w-full text-center">
 <thead class="bg-gray-700">
 <tr>
@@ -73,7 +80,6 @@ Spiel speichern
 </thead>
 <tbody id="matchTable"></tbody>
 </table>
-</div>
 
 </div>
 
@@ -81,11 +87,11 @@ Spiel speichern
 <div class="bg-gray-800 p-6 rounded-xl">
 <h3 class="text-xl font-bold mb-4">📊 Tabelle</h3>
 
-<button id="seasonBtn" class="bg-orange-600 px-4 py-2 rounded mb-4 hidden">
+<button id="seasonBtn"
+class="bg-orange-600 px-4 py-2 rounded mb-4 hidden">
 🏆 Saison beenden
 </button>
 
-<div class="overflow-x-auto">
 <table class="w-full text-center">
 <thead class="bg-gray-700">
 <tr>
@@ -93,210 +99,4 @@ Spiel speichern
 <th>Sp</th>
 <th>S</th>
 <th>U</th>
-<th>Leg+</th>
-<th>Leg-</th>
-<th>Diff</th>
-<th>P</th>
-</tr>
-</thead>
-<tbody id="leagueTable"></tbody>
-</table>
-</div>
-</div>
-
-</div>
-
-<script type="module">
-
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-
-const firebaseConfig = {
-apiKey: "AIzaSyDb87wTtntcY4VQ9WjekaA3CLYwW2bNrmQ",
-authDomain: "kirschtarmyliga.firebaseapp.com",
-projectId: "kirschtarmyliga",
-storageBucket: "kirschtarmyliga.firebasestorage.app",
-messagingSenderId: "661130390257",
-appId: "1:661130390257:web:469047a1dec589eb321750"
-};
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-
-let currentLiga="liga1";
-let isAdmin=false;
-let tableData={};
-
-const admins=[
-"janblut18@gmail.com",
-"jaqueline.zeiser@web.de",
-"kurka-sebastian@web.de"
-];
-
-loginBtn.onclick=async()=>{
-try{
-await signInWithEmailAndPassword(auth,email.value,password.value);
-loginStatus.innerText="Erfolgreich eingeloggt";
-}catch(e){
-loginStatus.innerText=e.message;
-}
-};
-
-logoutBtn.onclick=()=>signOut(auth);
-
-onAuthStateChanged(auth,(user)=>{
-isAdmin=user && admins.includes(user.email);
-
-addPlayerBtn.classList.toggle("hidden",!isAdmin);
-addMatchBtn.classList.toggle("hidden",!isAdmin);
-deleteHeader.classList.toggle("hidden",!isAdmin);
-seasonBtn.classList.toggle("hidden",!isAdmin);
-});
-
-document.querySelectorAll(".ligaBtn").forEach(btn=>{
-btn.onclick=()=>switchLiga(btn.dataset.liga);
-});
-
-addPlayerBtn.onclick=async()=>{
-const name=prompt("Spielername:");
-if(!name) return;
-
-await addDoc(collection(db,currentLiga+"_players"),{name:name.trim()});
-loadData();
-};
-
-addMatchBtn.onclick=async()=>{
-const heim=heimSelect.value;
-const gast=gastSelect.value;
-const spieltag=Number(spieltagInput.value);
-const result=resultInput.value.trim();
-
-if(heim===gast) return alert("Spiel gegen sich selbst nicht möglich");
-if(!/^\d+:\d+$/.test(result)) return alert("Format: 6:4");
-
-await addDoc(collection(db,currentLiga+"_matches"),{
-spieltag, heim, gast, result
-});
-
-loadData();
-};
-
-window.deleteMatch=async(id)=>{
-await deleteDoc(doc(db,currentLiga+"_matches",id));
-loadData();
-};
-
-async function switchLiga(liga){
-currentLiga=liga;
-ligaTitle.innerText="Liga "+liga.replace("liga","");
-loadData();
-}
-
-async function loadData(){
-
-playerList.innerHTML="";
-heimSelect.innerHTML="";
-gastSelect.innerHTML="";
-matchTable.innerHTML="";
-leagueTable.innerHTML="";
-tableData={};
-
-const playersSnap=await getDocs(collection(db,currentLiga+"_players"));
-
-playersSnap.forEach(d=>{
-const p=d.data().name.trim();
-
-playerList.innerHTML+=`<li class="bg-gray-700 p-2 rounded">${p}</li>`;
-heimSelect.innerHTML+=`<option>${p}</option>`;
-gastSelect.innerHTML+=`<option>${p}</option>`;
-
-tableData[p]={spiele:0,siege:0,unentschieden:0,legsPlus:0,legsMinus:0,punkte:0};
-});
-
-const matchSnap=await getDocs(collection(db,currentLiga+"_matches"));
-
-let matches=[];
-matchSnap.forEach(d=>{
-let data=d.data();
-
-// 🔥 WICHTIGER FIX → alte Daten kompatibel machen
-data.spieltag = Number(data.spieltag) || 0;
-data.heim = (data.heim || "").trim();
-data.gast = (data.gast || "").trim();
-
-matches.push({id:d.id,...data});
-});
-
-// 🔥 SORT FIX
-matches.sort((a,b)=>a.spieltag-b.spieltag);
-
-matches.forEach(m=>{
-
-if(!tableData[m.heim] || !tableData[m.gast]) return;
-
-matchTable.innerHTML+=`
-<tr>
-<td>${m.spieltag}</td>
-<td>${m.heim}</td>
-<td>${m.gast}</td>
-<td>${m.result}</td>
-${isAdmin ? `<td><button onclick="deleteMatch('${m.id}')">❌</button></td>`:""}
-</tr>
-`;
-
-if(!m.result.includes(":")) return;
-
-let [h,a]=m.result.split(":").map(Number);
-if(isNaN(h)||isNaN(a)) return;
-
-tableData[m.heim].spiele++;
-tableData[m.gast].spiele++;
-
-tableData[m.heim].legsPlus+=h;
-tableData[m.heim].legsMinus+=a;
-
-tableData[m.gast].legsPlus+=a;
-tableData[m.gast].legsMinus+=h;
-
-if(h>a){tableData[m.heim].siege++;tableData[m.heim].punkte+=3;}
-else if(h<a){tableData[m.gast].siege++;tableData[m.gast].punkte+=3;}
-else{
-tableData[m.heim].unentschieden++;
-tableData[m.gast].unentschieden++;
-tableData[m.heim].punkte+=1;
-tableData[m.gast].punkte+=1;
-}
-});
-
-let teams=Object.keys(tableData).sort((a,b)=>{
-return tableData[b].punkte-tableData[a].punkte ||
-(tableData[b].legsPlus-tableData[b].legsMinus) -
-(tableData[a].legsPlus-tableData[a].legsMinus);
-});
-
-teams.forEach(team=>{
-let d=tableData[team];
-leagueTable.innerHTML+=`
-<tr>
-<td>${team}</td>
-<td>${d.spiele}</td>
-<td>${d.siege}</td>
-<td>${d.unentschieden}</td>
-<td>${d.legsPlus}</td>
-<td>${d.legsMinus}</td>
-<td>${d.legsPlus-d.legsMinus}</td>
-<td>${d.punkte}</td>
-</tr>`;
-});
-
-}
-
-seasonBtn.onclick=()=>alert("Saison-Feature wie vorher 😄");
-
-switchLiga("liga1");
-
-</script>
-</body>
-</html>
+<th
