@@ -95,6 +95,15 @@ const admins=[
 "kurka-sebastian@web.de"
 ].map(a=>a.toLowerCase());
 
+// 🔥 NAME FIX
+function cleanName(name){
+return (name||"")
+.trim()
+.toLowerCase()
+.normalize("NFD")
+.replace(/[\u0300-\u036f]/g,"");
+}
+
 loginBtn.onclick=async()=>{
 try{
 await signInWithEmailAndPassword(auth,email.value,password.value);
@@ -124,11 +133,13 @@ await addDoc(collection(db,liga+"_players"),{name:n});
 
 addMatchBtn.onclick=async()=>{
 
-const heim=heimSelect.value;
-const gast=gastSelect.value;
+const heim=(heimSelect.value||"").trim();
+const gast=(gastSelect.value||"").trim();
 const spieltag=Number(spieltagInput.value);
-const result=resultInput.value;
+const result=resultInput.value.trim();
 
+if(!heim||!gast) return alert("Spieler fehlt");
+if(heim===gast) return alert("gleiches Team");
 if(!result.includes(":")) return alert("Format 6:4");
 
 const snap=await getDocs(collection(db,liga+"_matches"));
@@ -136,7 +147,7 @@ let exists=false;
 
 snap.forEach(d=>{
 let m=d.data();
-if(Number(m.spieltag)===spieltag && m.heim===heim && m.gast===gast){
+if(Number(m.spieltag)===spieltag && cleanName(m.heim)===cleanName(heim) && cleanName(m.gast)===cleanName(gast)){
 exists=true;
 }
 });
@@ -179,7 +190,8 @@ let tableData={};
 
 document.querySelectorAll("#playerList li").forEach(li=>{
 let p=li.innerText.trim();
-tableData[p]={
+tableData[cleanName(p)]={
+name:p,
 spiele:0,siege:0,unentschieden:0,
 legsPlus:0,legsMinus:0,punkte:0
 };
@@ -188,7 +200,10 @@ legsPlus:0,legsMinus:0,punkte:0
 snap.forEach(d=>{
 let m=d.data();
 
-if(!tableData[m.heim] || !tableData[m.gast]) return;
+let heim=cleanName(m.heim);
+let gast=cleanName(m.gast);
+
+if(!tableData[heim] || !tableData[gast]) return;
 
 matchTable.innerHTML+=`
 <tr>
@@ -204,28 +219,28 @@ if(!m.result.includes(":")) return;
 let [h,a]=m.result.split(":").map(Number);
 if(isNaN(h)||isNaN(a)) return;
 
-tableData[m.heim].spiele++;
-tableData[m.gast].spiele++;
+tableData[heim].spiele++;
+tableData[gast].spiele++;
 
-tableData[m.heim].legsPlus+=h;
-tableData[m.heim].legsMinus+=a;
+tableData[heim].legsPlus+=h;
+tableData[heim].legsMinus+=a;
 
-tableData[m.gast].legsPlus+=a;
-tableData[m.gast].legsMinus+=h;
+tableData[gast].legsPlus+=a;
+tableData[gast].legsMinus+=h;
 
 if(h>a){
-tableData[m.heim].siege++;
-tableData[m.heim].punkte+=3;
+tableData[heim].siege++;
+tableData[heim].punkte+=3;
 }
 else if(h<a){
-tableData[m.gast].siege++;
-tableData[m.gast].punkte+=3;
+tableData[gast].siege++;
+tableData[gast].punkte+=3;
 }
 else{
-tableData[m.heim].unentschieden++;
-tableData[m.gast].unentschieden++;
-tableData[m.heim].punkte++;
-tableData[m.gast].punkte++;
+tableData[heim].unentschieden++;
+tableData[gast].unentschieden++;
+tableData[heim].punkte++;
+tableData[gast].punkte++;
 }
 
 });
@@ -236,11 +251,11 @@ return tableData[b].punkte-tableData[a].punkte ||
 (tableData[a].legsPlus-tableData[a].legsMinus);
 });
 
-teams.forEach(t=>{
-let d=tableData[t];
+teams.forEach(k=>{
+let d=tableData[k];
 leagueTable.innerHTML+=`
 <tr>
-<td>${t}</td>
+<td>${d.name}</td>
 <td>${d.spiele}</td>
 <td>${d.siege}</td>
 <td>${d.unentschieden}</td>
