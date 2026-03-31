@@ -3,42 +3,148 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Kirschtarmy Liga</title>
+<title>Kirschtarmy 1.0</title>
 <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
 <body class="bg-gray-900 text-white min-h-screen">
-<div class="max-w-5xl mx-auto p-6">
+<div class="max-w-6xl mx-auto p-6">
 
-<h1 class="text-3xl font-bold text-center mb-6">🎯 Kirschtarmy Liga</h1>
+<h1 class="text-4xl font-bold text-center mb-8">🎯 Kirschtarmy 1.0</h1>
 
 <!-- LOGIN -->
-<div class="bg-gray-800 p-4 rounded mb-6 text-center">
-<input id="email" placeholder="Email" class="p-2 text-black rounded mb-2 w-60">
-<input id="password" type="password" placeholder="Passwort" class="p-2 text-black rounded mb-2 w-60">
-<br>
-<button id="loginBtn" class="bg-green-600 px-3 py-2 rounded">Login</button>
-<button id="logoutBtn" class="bg-red-600 px-3 py-2 rounded">Logout</button>
-<p id="status" class="mt-2 text-sm text-red-400"></p>
+<div class="bg-gray-800 p-4 rounded-xl mb-6 text-center">
+<input id="email" type="email" placeholder="Email" class="p-2 text-black rounded mb-2 w-64">
+<input id="password" type="password" placeholder="Passwort" class="p-2 text-black rounded mb-2 w-64">
+<div>
+<button id="loginBtn" class="bg-green-600 px-4 py-2 rounded">Login</button>
+<button id="logoutBtn" class="bg-red-600 px-4 py-2 rounded">Logout</button>
+</div>
+<p id="loginStatus" class="mt-2 text-sm text-red-400"></p>
 </div>
 
-<!-- LIGA -->
-<div class="flex justify-center gap-3 mb-4">
-<button class="ligaBtn bg-blue-600 px-3 py-2 rounded" data-liga="liga1">Liga 1</button>
-<button class="ligaBtn bg-purple-600 px-3 py-2 rounded" data-liga="liga2">Liga 2</button>
-<button class="ligaBtn bg-green-600 px-3 py-2 rounded" data-liga="liga3">Liga 3</button>
-<button class="ligaBtn bg-red-600 px-3 py-2 rounded" data-liga="liga4">Liga 4</button>
+<!-- LIGA BUTTONS -->
+<div class="flex justify-center gap-4 mb-6">
+<button data-liga="liga1" class="ligaBtn bg-blue-600 px-4 py-2 rounded">Liga 1</button>
+<button data-liga="liga2" class="ligaBtn bg-purple-600 px-4 py-2 rounded">Liga 2</button>
+<button data-liga="liga3" class="ligaBtn bg-green-600 px-4 py-2 rounded">Liga 3</button>
+<button data-liga="liga4" class="ligaBtn bg-red-600 px-4 py-2 rounded">Liga 4</button>
 </div>
 
-<h2 id="ligaTitle" class="text-xl text-center mb-4"></h2>
+<h2 id="ligaTitle" class="text-2xl font-bold text-center mb-4"></h2>
 
 <!-- SPIELER -->
-<div class="bg-gray-800 p-4 rounded mb-6">
-<h3 class="mb-2">👥 Spieler</h3>
-<ul id="players"></ul>
-<button id="addPlayer" class="bg-green-600 px-3 py-2 rounded mt-3 hidden">+ Spieler</button>
+<div class="bg-gray-800 p-6 rounded-xl mb-8">
+<h3 class="text-xl font-bold mb-4">👥 Spieler</h3>
+<ul id="playerList" class="mb-4 space-y-2"></ul>
+
+<button id="addPlayerBtn" class="bg-green-600 px-4 py-2 rounded hidden">
+➕ Spieler hinzufügen
+</button>
 </div>
 
 <!-- SPIEL -->
-<div class="bg-gray-800 p-4 rounded mb-6">
-<h3 class="mb-2">🗓 Spiel hinzufügen</h
+<div class="bg-gray-800 p-6 rounded-xl mb-8">
+<h3 class="text-xl font-bold mb-4">🗓 Spiel hinzufügen</h3>
+
+<div class="grid grid-cols-2 gap-4 mb-4">
+<select id="heimSelect" class="text-black p-2 rounded"></select>
+<select id="gastSelect" class="text-black p-2 rounded"></select>
+<input id="spieltagInput" type="number" placeholder="Spieltag" class="text-black p-2 rounded">
+<input id="resultInput" placeholder="Ergebnis 6:4" class="text-black p-2 rounded">
+</div>
+
+<button id="addMatchBtn" class="bg-blue-600 px-4 py-2 rounded hidden">
+Spiel speichern
+</button>
+
+<hr class="my-6 border-gray-600">
+
+<div class="overflow-x-auto">
+<table class="w-full text-center">
+<thead class="bg-gray-700">
+<tr>
+<th>Spieltag</th>
+<th>Heim</th>
+<th>Gast</th>
+<th>Ergebnis</th>
+<th id="deleteHeader" class="hidden">❌</th>
+</tr>
+</thead>
+<tbody id="matchTable"></tbody>
+</table>
+</div>
+
+</div>
+
+<!-- TABELLE -->
+<div class="bg-gray-800 p-6 rounded-xl">
+<h3 class="text-xl font-bold mb-4">📊 Tabelle</h3>
+
+<button id="seasonBtn" class="bg-orange-600 px-4 py-2 rounded mb-4 hidden">
+🏆 Saison beenden
+</button>
+
+<div class="overflow-x-auto">
+<table class="w-full text-center">
+<thead class="bg-gray-700">
+<tr>
+<th>Team</th>
+<th>Sp</th>
+<th>S</th>
+<th>U</th>
+<th>Leg+</th>
+<th>Leg-</th>
+<th>Diff</th>
+<th>P</th>
+</tr>
+</thead>
+<tbody id="leagueTable"></tbody>
+</table>
+</div>
+</div>
+
+</div>
+
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+apiKey: "AIzaSyDb87wTtntcY4VQ9WjekaA3CLYwW2bNrmQ",
+authDomain: "kirschtarmyliga.firebaseapp.com",
+projectId: "kirschtarmyliga",
+storageBucket: "kirschtarmyliga.firebasestorage.app",
+messagingSenderId: "661130390257",
+appId: "1:661130390257:web:469047a1dec589eb321750"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+let currentLiga="liga1";
+let isAdmin=false;
+let tableData={};
+
+const admins=[
+"janblut18@gmail.com",
+"jaqueline.zeiser@web.de",
+"kurka-sebastian@web.de"
+];
+
+loginBtn.onclick=async()=>{
+try{
+await signInWithEmailAndPassword(auth,email.value,password.value);
+loginStatus.innerText="Erfolgreich eingeloggt";
+}catch(e){
+loginStatus.innerText=e.message;
+}
+};
+
+logoutBtn.onclick=()=>signOut(auth);
+
+onAuthStateChanged(auth,(user)=>{
+isAdmin=user
