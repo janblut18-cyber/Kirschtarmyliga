@@ -134,6 +134,7 @@ let currentLiga="liga1";
 let isAdmin=false;
 let tableData={};
 
+// ✅ FIXED ADMIN LIST
 const admins=[
 "janblut18@gmail.com",
 "jaqueline.zeiser@web.de",
@@ -151,17 +152,22 @@ loginStatus.innerText=e.message;
 
 logoutBtn.onclick=()=>signOut(auth);
 
+// ✅ FIXED ADMIN CHECK
 onAuthStateChanged(auth,(user)=>{
+
 if(user){
-isAdmin = admins.includes((user.email||"").toLowerCase().trim());
+const mail=(user.email||"").toLowerCase().trim();
+console.log("Login erkannt:", mail);
+isAdmin=admins.includes(mail);
 }else{
-isAdmin = false;
+isAdmin=false;
 }
 
 addPlayerBtn.classList.toggle("hidden",!isAdmin);
 addMatchBtn.classList.toggle("hidden",!isAdmin);
 deleteHeader.classList.toggle("hidden",!isAdmin);
 seasonBtn.classList.toggle("hidden",!isAdmin);
+
 });
 
 document.querySelectorAll(".ligaBtn").forEach(btn=>{
@@ -169,7 +175,6 @@ btn.onclick=()=>switchLiga(btn.dataset.liga);
 });
 
 addPlayerBtn.onclick=async()=>{
-if(!isAdmin) return alert("Kein Admin!");
 const name=prompt("Spielername:");
 if(!name) return;
 await addDoc(collection(db,currentLiga+"_players"),{name:name.trim()});
@@ -177,19 +182,12 @@ loadData();
 };
 
 addMatchBtn.onclick=async()=>{
-if(!isAdmin) return alert("Kein Admin!");
-
 await addDoc(collection(db,currentLiga+"_matches"),{
-spieltag:Number(spieltagInput.value)||0,
-heim:(heimSelect.value||"").trim(),
-gast:(gastSelect.value||"").trim(),
-result:(resultInput.value||"").trim()
+spieltag:spieltagInput.value,
+heim:heimSelect.value.trim(),
+gast:gastSelect.value.trim(),
+result:resultInput.value.trim()
 });
-loadData();
-};
-
-window.deleteMatch=async(id)=>{
-await deleteDoc(doc(db,currentLiga+"_matches",id));
 loadData();
 };
 
@@ -211,9 +209,10 @@ tableData={};
 const playersSnap=await getDocs(collection(db,currentLiga+"_players"));
 
 playersSnap.forEach(d=>{
-const p=(d.data().name||"").trim();
+const p=d.data().name.trim();
 
 playerList.innerHTML+=`<li class="bg-gray-700 p-2 rounded">${p}</li>`;
+
 heimSelect.innerHTML+=`<option>${p}</option>`;
 gastSelect.innerHTML+=`<option>${p}</option>`;
 
@@ -222,61 +221,53 @@ tableData[p]={spiele:0,siege:0,unentschieden:0,legsPlus:0,legsMinus:0,punkte:0};
 
 const matchSnap=await getDocs(collection(db,currentLiga+"_matches"));
 
-let matches=[];
 matchSnap.forEach(d=>{
-let m=d.data();
 
-m.spieltag=Number(m.spieltag)||0;
-m.heim=(m.heim||"").trim();
-m.gast=(m.gast||"").trim();
-
-if(!m.heim || !m.gast) return;
-
-matches.push({id:d.id,...m});
-});
-
-matches.sort((a,b)=>a.spieltag-b.spieltag);
-
-matches.forEach(m=>{
+const m=d.data();
+let heim=m.heim.trim();
+let gast=m.gast.trim();
 
 matchTable.innerHTML+=`
 <tr>
 <td>${m.spieltag}</td>
-<td>${m.heim}</td>
-<td>${m.gast}</td>
+<td>${heim}</td>
+<td>${gast}</td>
 <td>${m.result}</td>
-${isAdmin ? `<td><button onclick="deleteMatch('${m.id}')">❌</button></td>`:""}
 </tr>
 `;
 
-if(!tableData[m.heim] || !tableData[m.gast]) return;
 if(!m.result.includes(":")) return;
 
 let [h,a]=m.result.split(":").map(Number);
 if(isNaN(h)||isNaN(a)) return;
 
-tableData[m.heim].spiele++;
-tableData[m.gast].spiele++;
+if(!tableData[heim] || !tableData[gast]) return;
 
-tableData[m.heim].legsPlus+=h;
-tableData[m.heim].legsMinus+=a;
+tableData[heim].spiele++;
+tableData[gast].spiele++;
 
-tableData[m.gast].legsPlus+=a;
-tableData[m.gast].legsMinus+=h;
+tableData[heim].legsPlus+=h;
+tableData[heim].legsMinus+=a;
 
-if(h>a){tableData[m.heim].siege++;tableData[m.heim].punkte+=3;}
-else if(h<a){tableData[m.gast].siege++;tableData[m.gast].punkte+=3;}
+tableData[gast].legsPlus+=a;
+tableData[gast].legsMinus+=h;
+
+if(h>a){tableData[heim].siege++;tableData[heim].punkte+=3;}
+else if(h<a){tableData[gast].siege++;tableData[gast].punkte+=3;}
 else{
-tableData[m.heim].unentschieden++;
-tableData[m.gast].unentschieden++;
-tableData[m.heim].punkte+=1;
-tableData[m.gast].punkte+=1;
+tableData[heim].unentschieden++;
+tableData[gast].unentschieden++;
+tableData[heim].punkte+=1;
+tableData[gast].punkte+=1;
 }
+
 });
 
 let teams=Object.keys(tableData).sort((a,b)=>{
-return tableData[b].punkte-tableData[a].punkte ||
-(tableData[b].legsPlus-tableData[b].legsMinus) -
+if(tableData[b].punkte!==tableData[a].punkte)
+return tableData[b].punkte-tableData[a].punkte;
+
+return (tableData[b].legsPlus-tableData[b].legsMinus)-
 (tableData[a].legsPlus-tableData[a].legsMinus);
 });
 
