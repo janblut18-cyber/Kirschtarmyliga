@@ -219,6 +219,14 @@ tableData[p]={spiele:0,siege:0,unentschieden:0,legsPlus:0,legsMinus:0,punkte:0};
 
 const matchSnap=await getDocs(collection(db,currentLiga+"_matches"));
 
+let matches=[];
+matchSnap.forEach(d=>{
+matches.push({id:d.id,...d.data()});
+});
+
+matches.sort((a,b)=>a.spieltag-b.spieltag);
+
+matches.forEach(m=>{
 matchSnap.forEach(d=>{
 
 const m=d.data();
