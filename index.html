@@ -12,6 +12,7 @@
 
 <h1 class="text-4xl font-bold text-center mb-8">🎯 Kirschtarmy 1.0</h1>
 
+<!-- LOGIN -->
 <div class="bg-gray-800 p-4 rounded-xl mb-6 text-center">
 <input id="email" type="email" placeholder="Email" class="p-2 text-black rounded mb-2 w-64">
 <input id="password" type="password" placeholder="Passwort" class="p-2 text-black rounded mb-2 w-64">
@@ -22,6 +23,7 @@
 <p id="loginStatus" class="mt-2 text-sm text-red-400"></p>
 </div>
 
+<!-- LIGA -->
 <div class="flex justify-center gap-4 mb-6">
 <button data-liga="liga1" class="ligaBtn bg-blue-600 px-4 py-2 rounded">Liga 1</button>
 <button data-liga="liga2" class="ligaBtn bg-purple-600 px-4 py-2 rounded">Liga 2</button>
@@ -31,12 +33,14 @@
 
 <h2 id="ligaTitle" class="text-2xl text-center mb-4"></h2>
 
+<!-- SPIELER -->
 <div class="bg-gray-800 p-6 rounded-xl mb-8">
 <h3>👥 Spieler</h3>
 <ul id="playerList"></ul>
 <button id="addPlayerBtn" class="bg-green-600 px-4 py-2 rounded hidden mt-3">+</button>
 </div>
 
+<!-- SPIEL -->
 <div class="bg-gray-800 p-6 rounded-xl mb-8">
 <h3>🗓 Spiel hinzufügen</h3>
 
@@ -51,13 +55,16 @@
 
 <table class="w-full mt-4 text-center">
 <thead>
-<tr><th>Tag</th><th>Heim</th><th>Gast</th><th>Ergebnis</th></tr>
+<tr>
+<th>Tag</th><th>Heim</th><th>Gast</th><th>Ergebnis</th><th id="delHead" class="hidden">❌</th>
+</tr>
 </thead>
 <tbody id="matchTable"></tbody>
 </table>
 
 </div>
 
+<!-- TABELLE -->
 <div class="bg-gray-800 p-6 rounded-xl">
 <h3>📊 Tabelle</h3>
 
@@ -70,7 +77,6 @@
 </thead>
 <tbody id="leagueTable"></tbody>
 </table>
-
 </div>
 
 </div>
@@ -79,7 +85,7 @@
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getFirestore, collection, addDoc, getDocs, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getFirestore, collection, addDoc, getDocs, onSnapshot, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const firebaseConfig = {
 apiKey: "AIzaSyDb87wTtntcY4VQ9WjekaA3CLYwW2bNrmQ",
@@ -111,8 +117,10 @@ logoutBtn.onclick=()=>signOut(auth);
 
 onAuthStateChanged(auth,(user)=>{
 isAdmin=user && admins.includes((user.email||"").toLowerCase());
+
 addMatchBtn.classList.toggle("hidden",!isAdmin);
 addPlayerBtn.classList.toggle("hidden",!isAdmin);
+delHead.classList.toggle("hidden",!isAdmin);
 });
 
 document.querySelectorAll(".ligaBtn").forEach(b=>{
@@ -132,6 +140,12 @@ heim:heimSelect.value,
 gast:gastSelect.value,
 result:resultInput.value
 });
+};
+
+// 🔥 DELETE MATCH
+window.deleteMatch = async (id)=>{
+if(!confirm("Spiel löschen?")) return;
+await deleteDoc(doc(db, liga+"_matches", id));
 };
 
 async function loadPlayers(){
@@ -174,6 +188,7 @@ matchTable.innerHTML+=`
 <td>${m.heim}</td>
 <td>${m.gast}</td>
 <td>${m.result}</td>
+${isAdmin ? `<td><button onclick="deleteMatch('${d.id}')">❌</button></td>` : ""}
 </tr>`;
 
 if(!m.result.includes(":")) return;
